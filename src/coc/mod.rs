@@ -1,5 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
+pub mod commands;
+
 // Add this struct to track team information
 #[derive(Clone)]
 pub struct TeamInfo {

@@ -11,12 +11,14 @@ use serenity::builder::{CreateInteractionResponse, CreateInteractionResponseMess
 use serenity::model::application::Interaction;
 use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
+use serenity::model::prelude::*;
 use serenity::prelude::*;
 
 struct Handler {
     dink_updates_channel_id: u64,
     interesting_items: HashSet<String>,
     username_to_team: HashMap<String, coc::TeamInfo>,
+    database: sqlx::SqlitePool,
 }
 
 #[async_trait]
@@ -27,6 +29,7 @@ impl EventHandler for Handler {
 
             let content = match command.data.name.as_str() {
                 "ping" => Some(commands::ping::run(&command.data.options())),
+                "assign" => Some(coc::commands::assign::run(&command.data.options())),
                 _ => Some("not implemented :(".to_string()),
             };
 
@@ -51,7 +54,13 @@ impl EventHandler for Handler {
         );
 
         let commands = guild_id
-            .set_commands(&ctx.http, vec![commands::ping::register()])
+            .set_commands(
+                &ctx.http,
+                vec![
+                    commands::ping::register(),
+                    coc::commands::assign::register(),
+                ],
+            )
             .await;
 
         println!("I now have the following guild slash commands: {commands:#?}");
@@ -105,6 +114,16 @@ async fn main() {
         .expect("Expected DINK_UPDATES_CHANNEL_ID in environment")
         .parse()
         .expect("DINK_UPDATES_CHANNEL_ID must be a valid ID");
+    // Initiate a connection to the database file, creating the file if required.
+    let database = sqlx::sqlite::SqlitePoolOptions::new()
+        .max_connections(5)
+        .connect_with(
+            sqlx::sqlite::SqliteConnectOptions::new()
+                .filename("util/coc.db")
+                .create_if_missing(true),
+        )
+        .await
+        .expect("Couldn't connect to database");
 
     // Build our client.
     let mut client = Client::builder(
@@ -115,6 +134,7 @@ async fn main() {
         dink_updates_channel_id,
         interesting_items: coc::setup_interesting_items(),
         username_to_team: coc::setup_username_teams(),
+        database,
     })
     .await
     .expect("Error creating client");
