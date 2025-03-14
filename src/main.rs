@@ -44,6 +44,39 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
     }
 }
 
+async fn event_handler(
+    ctx: &serenity::Context,
+    event: &serenity::FullEvent,
+    _framework: poise::FrameworkContext<'_, Data, Error>,
+    data: &Data,
+) -> Result<(), Error> {
+    match event {
+        serenity::FullEvent::Ready { data_about_bot, .. } => {
+            println!("Logged in as {}", data_about_bot.user.name);
+        }
+        serenity::FullEvent::Message { new_message } => {
+            println!("Got a message: {:?}", new_message.content);
+            println!("Embeds in this message: {:?}", new_message.embeds.len());
+            for embed in &new_message.embeds {
+                println!("Embed: {:?}", embed);
+            }
+            // if new_message.content.to_lowercase().contains("poise")
+            //     && new_message.author.id != ctx.cache.current_user().id
+            // {
+            //     let old_mentions = data.poise_mentions.fetch_add(1, Ordering::SeqCst);
+            //     new_message
+            //         .reply(
+            //             ctx,
+            //             format!("Poise has been mentioned {} times", old_mentions + 1),
+            //         )
+            //         .await?;
+            // }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
@@ -89,14 +122,14 @@ async fn main() {
         // Enforce command checks even for owners (enforced by default)
         // Set to true to bypass checks, which is useful for testing
         skip_checks_for_owners: false,
-        event_handler: |_ctx, event, _framework, _data| {
-            Box::pin(async move {
+        event_handler: |ctx, event, framework, data| {
+            let _ = Box::pin(async move {
                 println!(
                     "Got an event in event handler: {:?}",
                     event.snake_case_name()
                 );
-                Ok(())
-            })
+            });
+            Box::pin(event_handler(ctx, event, framework, data))
         },
         ..Default::default()
     };
