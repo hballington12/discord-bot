@@ -2,7 +2,7 @@
 CREATE TABLE team_members (
     id SERIAL PRIMARY KEY,
     team_id INTEGER NOT NULL,
-    user_id VARCHAR(255) NOT NULL
+    username VARCHAR(255) NOT NULL
 );
 
 -- Add index for faster lookups by team

@@ -1,6 +1,6 @@
 use poise::serenity_prelude as serenity;
 
-use crate::{dink, Error};
+use crate::{Context, Data, Error};
 
 #[cfg(test)]
 mod tests {
@@ -39,7 +39,7 @@ impl DinkDrop {
 /// Handles a message sent in the dink channel.
 /// If the message contains embeds, attempts to parse each embed description
 /// into a `DinkDrop` struct for processing.
-pub fn handle_message(new_message: &serenity::Message) {
+pub async fn handle_message(data: &Data, new_message: &serenity::Message) -> Result<(), Error> {
     let embed_count = new_message.embeds.len();
     println!("Received message with {} embed(s)", embed_count);
 
@@ -49,17 +49,152 @@ pub fn handle_message(new_message: &serenity::Message) {
             None => continue,
         };
 
-        match parse_loot_text(description) {
-            Ok(drop) => {
-                println!("User: {}", drop.user);
-                println!("Source: {}", drop.source);
-                println!("Items: {:?}", drop.loots);
+        let drop = parse_loot_text(description)?;
+        println!("User: {}", drop.user);
+        println!("Source: {}", drop.source);
+        println!("Items: {:?}", drop.loots);
 
-                //
+        println!("processing drop...");
+        process_drop(data, drop).await?;
+    }
+
+    Ok(())
+}
+
+/// Processes a dink drop
+///
+/// Check that the user is in the database - if not, return early.
+/// For each loot, query the hash table to determine if it is of note.
+/// For each noteworthy loot, update the quantity in resources for the player's
+/// team.
+async fn process_drop(data: &Data, drop: DinkDrop) -> Result<(), Error> {
+    let pool = &data.database;
+    println!("inside process drop.");
+
+    // Convert username to lowercase for consistent database access
+    let username = drop.user.to_lowercase();
+
+    // Check if the user belongs to any team
+    let team_result = sqlx::query!(
+        r#"
+        SELECT tm.team_id as "team_id: i32", t.name as team_name
+        FROM team_members tm
+        JOIN teams t ON tm.team_id = t.id
+        WHERE tm.username = $1
+        "#,
+        username
+    )
+    .fetch_optional(pool)
+    .await;
+
+    let team = match team_result {
+        Ok(Some(team)) => team,
+        Ok(None) => {
+            println!("User '{}' is not in any team, ignoring drop", drop.user);
+            return Ok(());
+        }
+        Err(e) => {
+            println!("Database error when checking user team: {}", e);
+            return Err(e.into());
+        }
+    };
+
+    println!(
+        "Processing drop for user '{}' of team '{}'",
+        drop.user, team.team_name
+    );
+
+    // Process each item in the drop
+    for (item_name, quantity) in drop.loots {
+        let quantity = quantity as i64;
+        let item_name = item_name.to_lowercase();
+
+        println!("querying for item: {}", item_name);
+        // Check if the item is of note (in the noteworthy_items table)
+        let item_result = sqlx::query!(
+            r#"
+            SELECT id as "id: i32"
+            FROM noteworthy_items
+            WHERE name = $1
+            "#,
+            item_name
+        )
+        .fetch_optional(pool)
+        .await;
+
+        match item_result {
+            Ok(Some(item)) => {
+                println!("Found noteworthy item: {}", item_name);
+
+                // Check if this resource already exists for the team
+                let existing_resource = sqlx::query!(
+                    r#"
+                    SELECT quantity 
+                    FROM resources
+                    WHERE team_id = $1 AND id = $2
+                    "#,
+                    team.team_id,
+                    item.id
+                )
+                .fetch_optional(pool)
+                .await?;
+
+                match existing_resource {
+                    Some(resource) => {
+                        // Update quantity of existing resource
+                        let new_quantity = resource.quantity + quantity;
+                        sqlx::query!(
+                            r#"
+                            UPDATE resources
+                            SET quantity = $1
+                            WHERE team_id = $2 AND id = $3
+                            "#,
+                            new_quantity,
+                            team.team_id,
+                            item.id
+                        )
+                        .execute(pool)
+                        .await?;
+
+                        println!(
+                            "Updated resource quantity for team '{}': {} x {} (new total: {})",
+                            team.team_name, item_name, quantity, new_quantity
+                        );
+                    }
+                    None => {
+                        // Insert new resource entry
+                        sqlx::query!(
+                            r#"
+                            INSERT INTO resources (team_id, id, quantity, resource_name)
+                            VALUES ($1, $2, $3, $4)
+                            "#,
+                            team.team_id,
+                            item.id,
+                            quantity,
+                            item_name
+                        )
+                        .execute(pool)
+                        .await?;
+
+                        println!(
+                            "Added new resource for team '{}': {} x {}",
+                            team.team_name, item_name, quantity
+                        );
+                    }
+                }
             }
-            Err(e) => println!("Failed to parse embed: {}", e),
+            Ok(None) => {
+                // Item is not noteworthy
+                println!("Item '{}' is not marked as noteworthy, ignoring", item_name);
+            }
+            Err(e) => {
+                println!("Database error when checking item: {}", e);
+                return Err(e.into());
+            }
         }
     }
+
+    Ok(())
 }
 
 /// Parse loot text into structured format

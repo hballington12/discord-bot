@@ -4,8 +4,6 @@ CREATE TABLE resources (
     team_id INTEGER NOT NULL,
     resource_name VARCHAR(100) NOT NULL,
     quantity INTEGER NOT NULL DEFAULT 0,
-    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
     UNIQUE (team_id, resource_name)

@@ -9,12 +9,12 @@ use std::{
 };
 
 use poise::serenity_prelude as serenity;
-use sqlx::{Database, SqlitePool};
+use sqlx::SqlitePool;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
-// to be customised later
+// to be customised as needed
 pub struct Data {
     dink_channel_id: u64,
     database: sqlx::SqlitePool,
@@ -38,7 +38,7 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
 }
 
 async fn event_handler(
-    ctx: &serenity::Context,
+    _ctx: &serenity::Context,
     event: &serenity::FullEvent,
     _framework: poise::FrameworkContext<'_, Data, Error>,
     data: &Data,
@@ -50,7 +50,10 @@ async fn event_handler(
         serenity::FullEvent::Message { new_message } => {
             // Use the stored channel ID
             if new_message.channel_id.get() == data.dink_channel_id {
-                dink::handle_message(new_message); // parse dink messages
+                println!("responding to message in dink channel");
+                if let Err(e) = dink::handle_message(data, new_message).await {
+                    println!("Error handling dink message: {}", e);
+                }
             }
         }
         _ => {}
@@ -67,9 +70,11 @@ async fn main() {
     let options = poise::FrameworkOptions {
         commands: vec![
             commands::age(),
-            coc::commands::bage(),
+            coc::commands::list_teams(), // Add the new command here
             coc::commands::add_player(),
-            list_teams(), // Add the new command here
+            coc::commands::add_team(),
+            coc::commands::remove_team(),
+            coc::commands::remove_player(),
         ],
         prefix_options: poise::PrefixFrameworkOptions {
             prefix: Some("~".into()),
@@ -132,22 +137,6 @@ async fn main() {
                     .parse::<u64>()
                     .expect("DINK_UPDATES_CHANNEL_ID must be a valid u64");
 
-                // // Get the project root directory from CARGO_MANIFEST_DIR
-                // let manifest_dir =
-                //     std::env::var("CARGO_MANIFEST_DIR").expect("Failed to get CARGO_MANIFEST_DIR");
-                // let database_url = var("DATABASE_URL").expect("Failed to get database url");
-
-                // let database_url = "db/coc.db";
-
-                // Initiate a connection to the database file, creating the file if required.
-                // let database = sqlx::sqlite::SqlitePoolOptions::new()
-                //     .max_connections(5)
-                //     .connect_with(
-                //         sqlx::sqlite::SqliteConnectOptions::new()
-                //     )
-                //     .await
-                //     .expect("Couldn't connect to database");
-
                 let pool = SqlitePool::connect(&env::var("DATABASE_URL")?).await?;
 
                 Ok(Data {
@@ -170,42 +159,4 @@ async fn main() {
         .await;
 
     client.unwrap().start().await.unwrap()
-}
-
-/// Lists all teams in the database
-#[poise::command(slash_command, prefix_command, guild_only)]
-pub async fn list_teams(ctx: Context<'_>) -> Result<(), Error> {
-    // Get database connection from context data
-    let pool = &ctx.data().database;
-
-    println!("Database path: {:?}", pool.connect_options());
-    println!(
-        "Current working directory: {:?}",
-        std::env::current_dir().unwrap_or_default()
-    );
-
-    // Query all teams from the database
-    let teams = sqlx::query!(
-        r#"
-        SELECT id, name 
-        FROM teams
-        "#
-    )
-    .fetch_all(pool)
-    .await?;
-
-    if teams.is_empty() {
-        ctx.say("No teams found in the database.").await?;
-        return Ok(());
-    }
-
-    // Format the results
-    let response = teams
-        .iter()
-        .map(|team| format!("• {} (ID: {:?})", team.name, team.id))
-        .collect::<Vec<_>>()
-        .join("\n");
-
-    ctx.say(format!("**Teams:**\n{}", response)).await?;
-    Ok(())
 }
