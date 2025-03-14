@@ -1,4 +1,3 @@
-
 -- Get the ID of the sample team
 INSERT INTO noteworthy_items (id, name)
 SELECT 0, 'bones'

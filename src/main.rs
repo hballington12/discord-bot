@@ -18,6 +18,7 @@ type Context<'a> = poise::Context<'a, Data, Error>;
 pub struct Data {
     dink_channel_id: u64,
     database: sqlx::SqlitePool,
+    res_patterns: coc::patterns::PatternConfig,
 } // User data, which is stored and accessible in all command invocations
 
 async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
@@ -137,11 +138,16 @@ async fn main() {
                     .parse::<u64>()
                     .expect("DINK_UPDATES_CHANNEL_ID must be a valid u64");
 
+                // connect to database
                 let pool = SqlitePool::connect(&env::var("DATABASE_URL")?).await?;
+
+                // load the pattern config
+                let res_patterns = coc::patterns::load_res_patterns();
 
                 Ok(Data {
                     dink_channel_id,
                     database: pool,
+                    res_patterns: res_patterns,
                 })
             })
         })

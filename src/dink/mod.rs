@@ -1,5 +1,6 @@
 use poise::serenity_prelude as serenity;
 
+use crate::coc;
 use crate::{Context, Data, Error};
 
 #[cfg(test)]
@@ -109,87 +110,81 @@ async fn process_drop(data: &Data, drop: DinkDrop) -> Result<(), Error> {
         let quantity = quantity as i64;
         let item_name = item_name.to_lowercase();
 
-        println!("querying for item: {}", item_name);
-        // Check if the item is of note (in the noteworthy_items table)
-        let item_result = sqlx::query!(
-            r#"
-            SELECT id as "id: i32"
-            FROM noteworthy_items
-            WHERE name = $1
-            "#,
-            item_name
-        )
-        .fetch_optional(pool)
-        .await;
+        println!("querying if item: {} matches pattern...", item_name);
 
-        match item_result {
-            Ok(Some(item)) => {
-                println!("Found noteworthy item: {}", item_name);
+        // Instead, use match pattern function
+        let result = coc::patterns::matches_pattern(&item_name, &data.res_patterns.patterns);
 
-                // Check if this resource already exists for the team
-                let existing_resource = sqlx::query!(
-                    r#"
+        if result {
+            println!("Found noteworthy item: {}", item_name);
+
+            // Check if this resource already exists for the team
+            let existing_resource = sqlx::query!(
+                r#"
                     SELECT quantity 
                     FROM resources
-                    WHERE team_id = $1 AND id = $2
+                    WHERE team_id = $1 AND resource_name = $2
                     "#,
-                    team.team_id,
-                    item.id
-                )
-                .fetch_optional(pool)
-                .await?;
+                team.team_id,
+                item_name
+            )
+            .fetch_optional(pool)
+            .await?;
 
-                match existing_resource {
-                    Some(resource) => {
-                        // Update quantity of existing resource
-                        let new_quantity = resource.quantity + quantity;
-                        sqlx::query!(
-                            r#"
+            match existing_resource {
+                Some(resource) => {
+                    // Update quantity of existing resource
+                    let new_quantity = resource.quantity + quantity;
+                    sqlx::query!(
+                        r#"
                             UPDATE resources
                             SET quantity = $1
-                            WHERE team_id = $2 AND id = $3
+                            WHERE team_id = $2 AND resource_name = $3
                             "#,
-                            new_quantity,
-                            team.team_id,
-                            item.id
-                        )
-                        .execute(pool)
-                        .await?;
+                        new_quantity,
+                        team.team_id,
+                        item_name
+                    )
+                    .execute(pool)
+                    .await?;
 
-                        println!(
-                            "Updated resource quantity for team '{}': {} x {} (new total: {})",
-                            team.team_name, item_name, quantity, new_quantity
-                        );
-                    }
-                    None => {
-                        // Insert new resource entry
-                        sqlx::query!(
-                            r#"
+                    println!(
+                        "Updated resource quantity for team '{}': {} x {} (new total: {})",
+                        team.team_name, item_name, quantity, new_quantity
+                    );
+                }
+                None => {
+                    // Insert new resource entry
+
+                    // get new id
+                    let max_id_result = sqlx::query!(
+                        r#"
+                        SELECT MAX(id) as "max_id: i32" FROM resources
+                        "#
+                    )
+                    .fetch_one(pool)
+                    .await?;
+
+                    let next_id = max_id_result.max_id.unwrap_or(0) + 1;
+
+                    sqlx::query!(
+                        r#"
                             INSERT INTO resources (team_id, id, quantity, resource_name)
                             VALUES ($1, $2, $3, $4)
                             "#,
-                            team.team_id,
-                            item.id,
-                            quantity,
-                            item_name
-                        )
-                        .execute(pool)
-                        .await?;
+                        team.team_id,
+                        next_id,
+                        quantity,
+                        item_name
+                    )
+                    .execute(pool)
+                    .await?;
 
-                        println!(
-                            "Added new resource for team '{}': {} x {}",
-                            team.team_name, item_name, quantity
-                        );
-                    }
+                    println!(
+                        "Added new resource for team '{}': {} x {}",
+                        team.team_name, item_name, quantity
+                    );
                 }
-            }
-            Ok(None) => {
-                // Item is not noteworthy
-                println!("Item '{}' is not marked as noteworthy, ignoring", item_name);
-            }
-            Err(e) => {
-                println!("Database error when checking item: {}", e);
-                return Err(e.into());
             }
         }
     }
