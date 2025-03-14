@@ -4,6 +4,7 @@
     edition = "2021"
 
 [dependencies]
+chrono = "0.4.40"
     dotenv = "0.15.0"
     poise = "0.6.1"
 regex = "1.11.1"
