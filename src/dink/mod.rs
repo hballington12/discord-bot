@@ -1,101 +1,107 @@
-use std::collections::HashMap;
+use poise::serenity_prelude as serenity;
 
-pub struct ParsedDinkUpdate {
-    pub username: String,
-    pub loot_string: String,
-    pub source: String,
-    pub items: HashMap<String, u32>, // Dictionary of item names to quantities
+use crate::{dink, Error};
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_loot_text() {
+        let input = "Solo H has looted: \n\n1 x [Bones](https://oldschool.runescape.wiki/w/Special:Search?search=Bones) (62)\n15 x [Coins](https://oldschool.runescape.wiki/w/Special:Search?search=Coins) (15)\nFrom: [Man](https://oldschool.runescape.wiki/w/Special:Search?search=Man)";
+
+        let dink_drop = parse_loot_text(input).unwrap();
+
+        assert_eq!(dink_drop.user, "Solo H");
+        assert_eq!(
+            dink_drop.loots,
+            vec![("Bones".to_string(), 1), ("Coins".to_string(), 15)]
+        );
+        assert_eq!(dink_drop.source, "Man");
+    }
 }
 
-pub fn parse_dink_update(content: &str) -> Option<ParsedDinkUpdate> {
-    // Extract username (everything before " has looted:")
-    let username = if let Some(idx) = content.find(" has looted:") {
-        content[..idx].trim().to_string()
-    } else {
-        println!("Could not find username pattern");
-        return None;
+struct DinkDrop {
+    user: String,
+    source: String,
+    loots: Vec<(String, u32)>,
+}
+
+impl DinkDrop {
+    pub fn new(user: String, source: String, loots: Vec<(String, u32)>) -> Self {
+        Self {
+            user,
+            source,
+            loots,
+        }
+    }
+}
+/// Handles a message sent in the dink channel.
+/// If the message contains embeds, attempts to parse each embed description
+/// into a `DinkDrop` struct for processing.
+pub fn handle_message(new_message: &serenity::Message) {
+    let embed_count = new_message.embeds.len();
+    println!("Received message with {} embed(s)", embed_count);
+
+    for embed in &new_message.embeds {
+        let description = match &embed.description {
+            Some(desc) => desc,
+            None => continue,
+        };
+
+        match parse_loot_text(description) {
+            Ok(drop) => {
+                println!("User: {}", drop.user);
+                println!("Source: {}", drop.source);
+                println!("Items: {:?}", drop.loots);
+
+                //
+            }
+            Err(e) => println!("Failed to parse embed: {}", e),
+        }
+    }
+}
+
+/// Parse loot text into structured format
+///
+/// Input format: "User has looted: \n\n# x [Item](url) (value)\n# x [Item](url) (value)\nFrom: [Source](url)"
+/// Output: (username, Vec<(item_name, quantity)>, source)
+fn parse_loot_text(text: &str) -> Result<DinkDrop, Error> {
+    // Extract username (assumes format "Username has looted:")
+    let username = match text.split(" has looted:").next() {
+        Some(name) => name.trim().to_string(),
+        None => return Err("Could not find username in loot text".into()),
     };
 
-    // Extract loot and source
-    let mut lines: Vec<&str> = content.lines().collect();
-    // Remove empty lines
-    lines.retain(|line| !line.trim().is_empty());
+    // Return err if username longer than 15 characters
+    if username.len() > 15 {
+        return Err("Username is too long (exceeds 15 characters)".into());
+    }
 
-    // Find source line (should start with "From: ")
-    let source = lines
-        .iter()
-        .find(|line| line.starts_with("From: "))
-        .map(|line| &line[6..]) // Remove "From: " prefix
-        .unwrap_or("")
-        .to_string();
+    // Split the text into lines and process each line%USERNAME% has looted:
+    let mut loots = Vec::new();
+    let mut source = String::new();
 
-    // Loot is everything between "has looted:" and "From:" sections
-    let mut loot = String::new();
-    let mut loot_started = false;
-    let mut loot_lines = Vec::new();
-
-    for line in lines {
-        if line.starts_with("From: ") {
-            break;
+    for line in text.lines() {
+        // Parse loot lines (format: "# x [Item](url) (value)")
+        if let Some(captures) = line.trim().split_once(" x [") {
+            let quantity = captures.0.trim().parse::<u32>().unwrap_or(0);
+            if let Some(item_name) = captures.1.split("](").next() {
+                loots.push((item_name.to_string(), quantity));
+            }
         }
 
-        if loot_started {
-            if !line.contains("has looted:") {
-                loot_lines.push(line);
+        // Parse source line (format: "From: [Source](url)")
+        if line.trim().starts_with("From: [") {
+            if let Some(src) = line.trim()[7..].split("](").next() {
+                source = src.to_string();
             }
-            if !loot.is_empty() {
-                loot.push('\n');
-            }
-            loot.push_str(line);
-        }
-
-        if line.contains("has looted:") {
-            loot_started = true;
         }
     }
 
-    // Parse individual items and quantities
-    let mut items = HashMap::new();
-    for line in loot_lines {
-        if let Some((item_name, quantity)) = parse_item_line(line) {
-            items.insert(item_name, quantity);
-        }
+    if loots.is_empty() {
+        return Err("No loots found in loot text".into());
     }
 
-    Some(ParsedDinkUpdate {
-        username,
-        loot_string: loot.trim().to_string(),
-        source,
-        items,
-    })
-}
-
-fn parse_item_line(line: &str) -> Option<(String, u32)> {
-    // Pattern: "{quantity} x {item_name} ({some_number})" or similar variations
-    if let Some(x_pos) = line.find(" x ") {
-        // Extract quantity
-        let quantity_str = line[..x_pos].trim();
-        let quantity = match quantity_str.parse::<u32>() {
-            Ok(num) => num,
-            Err(_) => {
-                println!("Failed to parse quantity from: {}", line);
-                return None;
-            }
-        };
-
-        // Extract item name - look for either " (" or end of string
-        let rest = &line[(x_pos + 3)..]; // Skip " x "
-        let item_name = if let Some(paren_pos) = rest.find(" (") {
-            rest[..paren_pos].trim()
-        } else {
-            rest.trim()
-        };
-
-        if !item_name.is_empty() {
-            return Some((item_name.to_string(), quantity));
-        }
-    }
-
-    println!("Failed to parse item line: {}", line);
-    None
+    Ok(DinkDrop::new(username, source, loots))
 }
