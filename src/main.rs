@@ -2,18 +2,16 @@ mod coc;
 mod commands;
 mod dink;
 
-use std::collections::{HashMap, HashSet};
-use std::env;
+use std::{
+    collections::{HashMap, HashSet},
+    env::var,
+    sync::{Arc, Mutex},
+    time::Duration,
+};
 
-use serenity::all::Message;
-use serenity::async_trait;
-use serenity::builder::{CreateInteractionResponse, CreateInteractionResponseMessage};
-use serenity::model::application::Interaction;
-use serenity::model::gateway::Ready;
-use serenity::model::id::GuildId;
-use serenity::model::prelude::*;
-use serenity::prelude::*;
+use poise::serenity_prelude as serenity;
 
+// to be refactored
 struct Handler {
     dink_updates_channel_id: u64,
     interesting_items: HashSet<String>,
@@ -21,84 +19,26 @@ struct Handler {
     database: sqlx::SqlitePool,
 }
 
-#[async_trait]
-impl EventHandler for Handler {
-    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        if let Interaction::Command(command) = interaction {
-            println!("Received command interaction: {command:#?}");
+type Error = Box<dyn std::error::Error + Send + Sync>;
+type Context<'a> = poise::Context<'a, Data, Error>;
 
-            let content = match command.data.name.as_str() {
-                "ping" => Some(commands::ping::run(&command.data.options())),
-                "assign" => Some(coc::commands::assign::run(&command.data.options())),
-                _ => Some("not implemented :(".to_string()),
-            };
+// to be customised later
+pub struct Data {
+    votes: Mutex<HashMap<String, u32>>,
+} // User data, which is stored and accessible in all command invocations
 
-            if let Some(content) = content {
-                let data = CreateInteractionResponseMessage::new().content(content);
-                let builder = CreateInteractionResponse::Message(data);
-                if let Err(why) = command.create_response(&ctx.http, builder).await {
-                    println!("Cannot respond to slash command: {why}");
-                }
-            }
+async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
+    // This is our custom error handler
+    // They are many errors that can occur, so we only handle the ones we want to customize
+    // and forward the rest to the default handler
+    match error {
+        poise::FrameworkError::Setup { error, .. } => panic!("Failed to start bot: {:?}", error),
+        poise::FrameworkError::Command { error, ctx, .. } => {
+            println!("Error in command `{}`: {:?}", ctx.command().name, error,);
         }
-    }
-
-    async fn ready(&self, ctx: Context, ready: Ready) {
-        println!("{} is connected!", ready.user.name);
-
-        let guild_id = GuildId::new(
-            env::var("GUILD_ID")
-                .expect("Expected GUILD_ID in environment")
-                .parse()
-                .expect("GUILD_ID must be an integer"),
-        );
-
-        let commands = guild_id
-            .set_commands(
-                &ctx.http,
-                vec![
-                    commands::ping::register(),
-                    coc::commands::assign::register(),
-                ],
-            )
-            .await;
-
-        println!("I now have the following guild slash commands: {commands:#?}");
-    }
-
-    async fn message(&self, ctx: Context, message: Message) {
-        // Check if the message is from the dink updates channel
-        if message.channel_id == self.dink_updates_channel_id {
-            // Parse the message using our function
-            if let Some(parsed) = dink::parse_dink_update(&message.content) {
-                println!("Username: {}", parsed.username);
-                println!("Loot: {}", parsed.loot_string);
-                println!("Source: {}", parsed.source);
-
-                // Print parsed items
-                println!("Parsed items:");
-                for (item, quantity) in &parsed.items {
-                    println!("  {} x {}", quantity, item);
-                }
-
-                // Check for interesting items
-                let mut found_interesting_items = Vec::new();
-                for (item, quantity) in &parsed.items {
-                    if self.interesting_items.contains(item) {
-                        println!("found interesting item: {}", item);
-                        found_interesting_items.push((item, *quantity));
-                    }
-                }
-
-                // Look up team name from username
-                if let Some(team_info) = self.username_to_team.get(&parsed.username) {
-                    println!(
-                        "User {} belongs to team {} (ID: {})",
-                        parsed.username, team_info.name, team_info.id
-                    );
-                } else {
-                    println!("User {} does not belong to any known team", parsed.username);
-                }
+        error => {
+            if let Err(e) = poise::builtins::on_error(error).await {
+                println!("Error while handling error: {}", e)
             }
         }
     }
@@ -106,43 +46,83 @@ impl EventHandler for Handler {
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt::init();
+
+    // FrameworkOptions contains all of poise's configuration option in one struct
+    // Every option can be omitted to use its default value
+    let options = poise::FrameworkOptions {
+        commands: vec![commands::age()],
+        prefix_options: poise::PrefixFrameworkOptions {
+            prefix: Some("~".into()),
+            edit_tracker: Some(Arc::new(poise::EditTracker::for_timespan(
+                Duration::from_secs(3600),
+            ))),
+            additional_prefixes: vec![
+                poise::Prefix::Literal("hey bot,"),
+                poise::Prefix::Literal("hey bot"),
+            ],
+            ..Default::default()
+        },
+        // The global error handler for all error cases that may occur
+        on_error: |error| Box::pin(on_error(error)),
+        // This code is run before every command
+        pre_command: |ctx| {
+            Box::pin(async move {
+                println!("Executing command {}...", ctx.command().qualified_name);
+            })
+        },
+        // This code is run after a command if it was successful (returned Ok)
+        post_command: |ctx| {
+            Box::pin(async move {
+                println!("Executed command {}!", ctx.command().qualified_name);
+            })
+        },
+        // Every command invocation must pass this check to continue execution
+        command_check: Some(|ctx| {
+            Box::pin(async move {
+                if ctx.author().id == 123456789 {
+                    return Ok(false);
+                }
+                Ok(true)
+            })
+        }),
+        // Enforce command checks even for owners (enforced by default)
+        // Set to true to bypass checks, which is useful for testing
+        skip_checks_for_owners: false,
+        event_handler: |_ctx, event, _framework, _data| {
+            Box::pin(async move {
+                println!(
+                    "Got an event in event handler: {:?}",
+                    event.snake_case_name()
+                );
+                Ok(())
+            })
+        },
+        ..Default::default()
+    };
+
+    let framework = poise::Framework::builder()
+        .setup(move |ctx, _ready, framework| {
+            Box::pin(async move {
+                println!("Logged in as {}", _ready.user.name);
+                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
+                Ok(Data {
+                    votes: Mutex::new(HashMap::new()),
+                })
+            })
+        })
+        .options(options)
+        .build();
+
     dotenv::dotenv().expect("Failed to load .env file");
-    // Configure the client with your Discord bot token in the environment.
-    let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
-    // Parse the dink updates channel ID once
-    let dink_updates_channel_id = env::var("DINK_UPDATES_CHANNEL_ID")
-        .expect("Expected DINK_UPDATES_CHANNEL_ID in environment")
-        .parse()
-        .expect("DINK_UPDATES_CHANNEL_ID must be a valid ID");
-    // Initiate a connection to the database file, creating the file if required.
-    let database = sqlx::sqlite::SqlitePoolOptions::new()
-        .max_connections(5)
-        .connect_with(
-            sqlx::sqlite::SqliteConnectOptions::new()
-                .filename("util/coc.db")
-                .create_if_missing(true),
-        )
-        .await
-        .expect("Couldn't connect to database");
+    let token = var("DISCORD_TOKEN")
+        .expect("Missing `DISCORD_TOKEN` env var, see README for more information.");
+    let intents =
+        serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::MESSAGE_CONTENT;
 
-    // Build our client.
-    let mut client = Client::builder(
-        token,
-        GatewayIntents::GUILD_MESSAGES | GatewayIntents::MESSAGE_CONTENT,
-    )
-    .event_handler(Handler {
-        dink_updates_channel_id,
-        interesting_items: coc::setup_interesting_items(),
-        username_to_team: coc::setup_username_teams(),
-        database,
-    })
-    .await
-    .expect("Error creating client");
+    let client = serenity::ClientBuilder::new(token, intents)
+        .framework(framework)
+        .await;
 
-    // Finally, start a single shard, and start listening to events.
-    // Shards will automatically attempt to reconnect, and will perform exponential backoff until
-    // it reconnects.
-    if let Err(why) = client.start().await {
-        println!("Client error: {why:?}");
-    }
+    client.unwrap().start().await.unwrap()
 }
