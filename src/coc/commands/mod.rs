@@ -1,10 +1,7 @@
 use crate::coc::get_team;
 use crate::{Context, Data, Error};
 
-use ::serenity::builder;
 use poise::serenity_prelude as serenity;
-use serenity::builder::{CreateAttachment, CreateEmbed, CreateEmbedFooter, CreateMessage};
-use serenity::model::Timestamp;
 
 /// Lists all teams in the database
 #[poise::command(slash_command, prefix_command, guild_only)]
@@ -102,6 +99,24 @@ pub async fn add_team(
     .fetch_optional(pool)
     .await?;
 
+    // Insert a new set of buildings into the database
+    let town_config = &ctx.data().town_config;
+
+    // Loop through the buildings and insert them into the database
+    for (building, _) in &town_config.buildings {
+        let _ = sqlx::query!(
+            r#"
+            INSERT INTO team_buildings (team_id, building_name, level)
+            VALUES ($1, $2, $3)
+            "#,
+            next_id,
+            building,
+            1,
+        )
+        .fetch_optional(pool)
+        .await?;
+    }
+
     ctx.say(format!(
         "Team '{}' created successfully! (ID: {})",
         team_name, next_id
@@ -138,6 +153,16 @@ pub async fn remove_team(
             .await?;
         return Ok(());
     }
+
+    // Delete any buildings associated with this team first
+    sqlx::query!(
+        r#"
+        DELETE FROM team_buildings WHERE team_id = (SELECT id FROM teams WHERE name = $1)
+        "#,
+        team_name
+    )
+    .execute(pool)
+    .await?;
 
     // Delete the team from the database
     sqlx::query!(
@@ -364,7 +389,7 @@ pub async fn create_resource_embed(
                     .await?;
 
                     // Update existing or insert new record
-                    if let Some(record) = existing {
+                    if let Some(_record) = existing {
                         // Update existing record
                         sqlx::query!(
                             r#"
@@ -582,30 +607,3 @@ pub async fn update_team_embeds(
 
     Ok((updated_count, results))
 }
-
-// /// Command to update all embeds for a team
-// #[poise::command(slash_command, prefix_command)]
-// pub async fn update_embeds(
-//     ctx: Context<'_>,
-//     #[description = "Name of the team"] team_name: String,
-// ) -> Result<(), Error> {
-//     let (count, results) = update_team_embeds(ctx, ctx.data(), &team_name).await?;
-
-//     let summary = if count > 0 {
-//         format!(
-//             "Successfully updated {} embeds for team '{}'",
-//             count, team_name
-//         )
-//     } else {
-//         format!("No embeds were updated for team '{}'", team_name)
-//     };
-
-//     // Join the results with line breaks
-//     let details = results.join("\n");
-
-//     // Send the response
-//     ctx.say(format!("{}\n\nDetails:\n{}", summary, details))
-//         .await?;
-
-//     Ok(())
-// }

@@ -1,0 +1,119 @@
+# Main configuration file for team buildings and upgrade requirements
+# Each team starts with these buildings at level 1 (unless otherwise specified)
+
+# Town Hall - Main team building
+[buildings.townhall]
+    name = "Town Hall"
+    description = "The heart of your team's base. Upgrade to unlock more buildings and higher building levels."
+    starting_level = 1
+    max_level = 9
+    icon = "🏰"
+
+    # Upgrade requirements for Town Hall by level
+    # Format: [level, "resource_name", amount]
+    upgrade_costs = [
+        # Level 2
+        [2, "bones", 2],
+        [2, "coins", 10],
+        # Level 3
+        [3, "wood", 250],
+        [3, "stone", 150],
+        [3, "iron", 30],
+        # Level 4
+        [4, "wood", 500],
+        [4, "stone", 300],
+        [4, "iron", 100],
+        # Level 5
+        [5, "wood", 1000],
+        [5, "stone", 750],
+        [5, "iron", 250],
+        [5, "crystal", 10],
+        # Level 6
+        [6, "wood", 2000],
+        [6, "stone", 1500],
+        [6, "iron", 500],
+        [6, "crystal", 30],
+        # Level 7
+        [7, "wood", 4000],
+        [7, "stone", 3000],
+        [7, "iron", 1000],
+        [7, "crystal", 75],
+        # Level 8
+        [8, "wood", 8000],
+        [8, "stone", 6000],
+        [8, "iron", 2500],
+        [8, "crystal", 150],
+        [8, "ancient_core", 1],
+        # Level 9
+        [9, "wood", 16000],
+        [9, "stone", 12000],
+        [9, "iron", 5000],
+        [9, "crystal", 300],
+        [9, "ancient_core", 3],
+    ]
+
+    # Benefits per level - what each level provides (none for town hall)
+    benefits = []
+
+# Armory - For weapon upgrades and team equipment
+[buildings.armory]
+    name = "Armory"
+    description = "Allows crafting and upgrading of weapons and armor. Higher levels unlock better equipment."
+    starting_level = 1
+    max_level = 9
+    icon = "⚔️"
+
+    # Upgrade requirements for Armory by level
+    upgrade_costs = [
+        # Level 2
+        [2, "wood", 75],
+        [2, "iron", 25],
+        # Level 3
+        [3, "wood", 150],
+        [3, "iron", 75],
+        [3, "leather", 30],
+        # Level 4
+        [4, "wood", 300],
+        [4, "iron", 200],
+        [4, "leather", 75],
+        # Level 5
+        [5, "wood", 600],
+        [5, "iron", 400],
+        [5, "leather", 150],
+        [5, "crystal", 5],
+        # Level 6
+        [6, "wood", 1200],
+        [6, "iron", 800],
+        [6, "leather", 300],
+        [6, "crystal", 15],
+        # Level 7
+        [7, "wood", 2400],
+        [7, "iron", 1600],
+        [7, "leather", 600],
+        [7, "crystal", 40],
+        # Level 8
+        [8, "wood", 4800],
+        [8, "iron", 3200],
+        [8, "leather", 1200],
+        [8, "crystal", 80],
+        [8, "ancient_metal", 1],
+        # Level 9
+        [9, "wood", 9600],
+        [9, "iron", 6400],
+        [9, "leather", 2400],
+        [9, "crystal", 160],
+        [9, "ancient_metal", 2],
+    ]
+
+    # Benefits per level - what each level provides
+    benefits = [
+        [1, "Basic weapons and armor"],
+        [2, "Improved weapons +10% damage"],
+        [3, "Improved armor +10% defense"],
+        [4, "Advanced weapons +25% damage"],
+        [5, "Advanced armor +25% defense"],
+        [6, "Elite weapons +40% damage"],
+        [7, "Elite armor +40% defense"],
+        [8, "Legendary weapons +60% damage"],
+        [9, "Legendary armor +60% defense, Special abilities unlocked"],
+    ]

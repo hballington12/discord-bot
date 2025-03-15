@@ -21,6 +21,7 @@ pub struct Data {
     dink_channel_id: u64,
     database: sqlx::SqlitePool,
     res_patterns: coc::patterns::PatternConfig,
+    town_config: coc::buildings::TownConfig,
     status_message: tokio::sync::Mutex<Option<(serenity::ChannelId, serenity::MessageId)>>,
 } // User data, which is stored and accessible in all command invocations
 
@@ -151,10 +152,15 @@ async fn main() {
                 // load the pattern config
                 let res_patterns = coc::patterns::load_res_patterns();
 
+                // load town config
+                let town_config =
+                    coc::buildings::init_buildings().expect("could not load town config");
+
                 Ok(Data {
                     dink_channel_id,
                     database: pool,
                     res_patterns: res_patterns,
+                    town_config,
                     status_message: tokio::sync::Mutex::new(None),
                 })
             })
