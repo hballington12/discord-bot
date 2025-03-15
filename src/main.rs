@@ -82,6 +82,8 @@ async fn main() {
             coc::commands::remove_player(),
             coc::commands::create_resource_embed(),
             coc::commands::list_team_resources(),
+            coc::commands::upgrade_building(),
+            coc::commands::create_buildings_embed(),
             commands::simple_embed(),
             commands::edit_embed(),
         ],

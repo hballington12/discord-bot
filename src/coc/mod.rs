@@ -18,7 +18,7 @@ pub struct Team {
 
 impl Team {
     /// Creates an embed containing team information and resources
-    pub fn create_embed(&self) -> CreateEmbed {
+    pub fn make_resource_embed(&self) -> CreateEmbed {
         // Create the title with team name
         let title = format!("{} Team Resources", self.name);
 
@@ -81,7 +81,7 @@ impl Team {
 
     /// Creates a message builder with the team embed
     pub async fn create_message(&self) -> Result<CreateMessage, Error> {
-        let embed = self.create_embed();
+        let embed = self.make_resource_embed();
 
         // Create the message with the embed
         let message = CreateMessage::new()

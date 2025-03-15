@@ -13,12 +13,10 @@
     # Format: [level, "resource_name", amount]
     upgrade_costs = [
         # Level 2
-        [2, "bones", 2],
-        [2, "coins", 10],
+        [2, "bones", 1],
+        # [2, "coins", 10],
         # Level 3
-        [3, "wood", 250],
-        [3, "stone", 150],
-        [3, "iron", 30],
+        [3, "bones", 10],
         # Level 4
         [4, "wood", 500],
         [4, "stone", 300],
