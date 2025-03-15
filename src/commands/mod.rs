@@ -64,7 +64,7 @@ pub async fn simple_embed(ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(slash_command, prefix_command)]
 pub async fn edit_embed(ctx: Context<'_>) -> Result<(), Error> {
     // Hardcoded message ID - replace this with your actual message ID
-    let message_id = serenity::MessageId::new(1350410790129238067); // Replace with your message ID
+    let message_id = serenity::MessageId::new(1350465382548242545); // Replace with your message ID
     let channel_id = ctx.channel_id();
 
     let footer = CreateEmbedFooter::new("This footer was edited");

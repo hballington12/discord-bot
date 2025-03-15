@@ -42,7 +42,7 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
 }
 
 async fn event_handler(
-    _ctx: &serenity::Context,
+    ctx: &serenity::Context,
     event: &serenity::FullEvent,
     _framework: poise::FrameworkContext<'_, Data, Error>,
     data: &Data,
@@ -55,7 +55,7 @@ async fn event_handler(
             // Use the stored channel ID
             if new_message.channel_id.get() == data.dink_channel_id {
                 println!("responding to message in dink channel");
-                if let Err(e) = dink::handle_message(data, new_message).await {
+                if let Err(e) = dink::handle_message(ctx, data, new_message).await {
                     println!("Error handling dink message: {}", e);
                 }
             }

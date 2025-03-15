@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use crate::{Context, Error};
+use crate::{Context, Data, Error};
 use poise::serenity_prelude as serenity;
 use serenity::builder::{CreateAttachment, CreateEmbed, CreateEmbedFooter, CreateMessage};
 use serenity::model::Timestamp;
@@ -92,9 +92,9 @@ impl Team {
 }
 
 /// Construct team from query
-pub async fn get_team(ctx: Context<'_>, team_name: &String) -> Result<Option<Team>, Error> {
+pub async fn get_team(data: &Data, team_name: &String) -> Result<Option<Team>, Error> {
     // Get database connection from context data
-    let pool = &ctx.data().database;
+    let pool = &data.database;
 
     // Convert team name to lowercase for consistent lookups
     let team_name = team_name.to_lowercase();

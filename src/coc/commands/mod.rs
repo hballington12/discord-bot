@@ -1,5 +1,5 @@
 use crate::coc::get_team;
-use crate::{Context, Error};
+use crate::{Context, Data, Error};
 
 use ::serenity::builder;
 use poise::serenity_prelude as serenity;
@@ -324,10 +324,11 @@ pub async fn create_resource_embed(
     #[description = "Name of the team"] team_name: String,
 ) -> Result<(), Error> {
     // Get database connection from context data
-    let pool = &ctx.data().database;
+    let data = ctx.data();
+    let pool = &data.database;
 
     // Get team data from database
-    let team_opt = get_team(ctx, &team_name).await?;
+    let team_opt = get_team(data, &team_name).await?;
 
     match team_opt {
         Some(team) => {
@@ -485,17 +486,19 @@ pub async fn list_team_resources(
 
 /// Updates all registered embeds for a specific team
 pub async fn update_team_embeds(
-    ctx: &Context<'_>,
+    ctx: &serenity::Context,
+    data: &Data,
     team_name: &str,
 ) -> Result<(usize, Vec<String>), Error> {
     // Get database connection from context data
-    let pool = &ctx.data().database;
+    // let pool = &ctx.data().database;
+    let pool = &data.database;
 
     // Convert team name to lowercase for consistent lookups
     let team_name = team_name.to_lowercase();
 
     // Get team data from database
-    let team_opt = get_team(*ctx, &team_name.to_string()).await?;
+    let team_opt = get_team(data, &team_name.to_string()).await?;
 
     let team = match team_opt {
         Some(team) => team,
@@ -533,7 +536,7 @@ pub async fn update_team_embeds(
         // Try to edit the message
         let result = channel_id
             .edit_message(
-                &ctx.http(),
+                &ctx.http,
                 message_id,
                 serenity::builder::EditMessage::new()
                     .content("This message was edited!")
@@ -580,29 +583,29 @@ pub async fn update_team_embeds(
     Ok((updated_count, results))
 }
 
-/// Command to update all embeds for a team
-#[poise::command(slash_command, prefix_command)]
-pub async fn update_embeds(
-    ctx: Context<'_>,
-    #[description = "Name of the team"] team_name: String,
-) -> Result<(), Error> {
-    let (count, results) = update_team_embeds(&ctx, &team_name).await?;
+// /// Command to update all embeds for a team
+// #[poise::command(slash_command, prefix_command)]
+// pub async fn update_embeds(
+//     ctx: Context<'_>,
+//     #[description = "Name of the team"] team_name: String,
+// ) -> Result<(), Error> {
+//     let (count, results) = update_team_embeds(ctx, ctx.data(), &team_name).await?;
 
-    let summary = if count > 0 {
-        format!(
-            "Successfully updated {} embeds for team '{}'",
-            count, team_name
-        )
-    } else {
-        format!("No embeds were updated for team '{}'", team_name)
-    };
+//     let summary = if count > 0 {
+//         format!(
+//             "Successfully updated {} embeds for team '{}'",
+//             count, team_name
+//         )
+//     } else {
+//         format!("No embeds were updated for team '{}'", team_name)
+//     };
 
-    // Join the results with line breaks
-    let details = results.join("\n");
+//     // Join the results with line breaks
+//     let details = results.join("\n");
 
-    // Send the response
-    ctx.say(format!("{}\n\nDetails:\n{}", summary, details))
-        .await?;
+//     // Send the response
+//     ctx.say(format!("{}\n\nDetails:\n{}", summary, details))
+//         .await?;
 
-    Ok(())
-}
+//     Ok(())
+// }

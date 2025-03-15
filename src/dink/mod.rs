@@ -41,7 +41,11 @@ impl DinkDrop {
 /// Handles a message sent in the dink channel.
 /// If the message contains embeds, attempts to parse each embed description
 /// into a `DinkDrop` struct for processing.
-pub async fn handle_message(data: &Data, new_message: &serenity::Message) -> Result<(), Error> {
+pub async fn handle_message(
+    ctx: &serenity::Context,
+    data: &Data,
+    new_message: &serenity::Message,
+) -> Result<(), Error> {
     let embed_count = new_message.embeds.len();
     println!("Received message with {} embed(s)", embed_count);
 
@@ -57,7 +61,7 @@ pub async fn handle_message(data: &Data, new_message: &serenity::Message) -> Res
         println!("Items: {:?}", drop.loots);
 
         println!("processing drop...");
-        process_drop(data, drop).await?;
+        process_drop(ctx, data, drop).await?;
     }
 
     Ok(())
@@ -69,7 +73,7 @@ pub async fn handle_message(data: &Data, new_message: &serenity::Message) -> Res
 /// For each loot, query the hash table to determine if it is of note.
 /// For each noteworthy loot, update the quantity in resources for the player's
 /// team.
-async fn process_drop(data: &Data, drop: DinkDrop) -> Result<(), Error> {
+async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> Result<(), Error> {
     let pool = &data.database;
     println!("inside process drop.");
 
@@ -189,7 +193,7 @@ async fn process_drop(data: &Data, drop: DinkDrop) -> Result<(), Error> {
             }
 
             // also update any embed resource messages
-            update_team_embeds()
+            let _ = update_team_embeds(ctx, data, &team.team_name).await;
         }
     }
 
