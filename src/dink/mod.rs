@@ -2,6 +2,10 @@ use poise::serenity_prelude as serenity;
 
 use crate::coc;
 use crate::coc::commands::update_team_embeds;
+use crate::coc::database::{
+    get_existing_resource, get_team_armory_level, get_user_team, insert_new_resource,
+    update_resource_quantity,
+};
 use crate::{Context, Data, Error};
 
 #[cfg(test)]
@@ -82,20 +86,7 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
     let username = drop.user.to_lowercase();
 
     // Check if the user belongs to any team
-    let team_result = sqlx::query!(
-        r#"
-        SELECT tm.team_id as "team_id: i32", t.name as team_name
-        FROM team_members tm
-        JOIN teams t ON tm.team_id = t.id
-        WHERE tm.username = $1
-        "#,
-        username
-    )
-    .fetch_optional(pool)
-    .await;
-
-    // check tha the player belongs to a team in the database
-    let team = match team_result {
+    let team = match get_user_team(pool, &username).await {
         Ok(Some(team)) => team,
         Ok(None) => {
             println!("User '{}' is not in any team, ignoring drop", drop.user);
@@ -116,39 +107,20 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
     }
     let level = source_level.unwrap() as i32;
 
-    // try to retrieve the team's max combat level
     // Retrieve the team's armory level and check if they have access to the source's combat level
-    let armory_result = sqlx::query!(
-        r#"
-        SELECT 
-            t.id AS "team_id: i32",
-            t.name AS team_name,
-            tb.level AS "armory_level: i32",
-            acm.max_combat_level AS "max_combat_level: i32",
-            $1 <= acm.max_combat_level AS "has_access: bool"
-        FROM teams t
-        JOIN team_buildings tb ON t.id = tb.team_id
-        JOIN armory_combat_mapping acm ON tb.level = acm.armory_level
-        WHERE 
-            tb.building_name = 'armory'
-            AND t.id = $2
-        "#,
-        level,
-        team.team_id
-    )
-    .fetch_optional(pool)
-    .await?;
-
-    // Check if the team has access to this combat level
-    let has_access = match armory_result {
-        Some(record) => record.has_access.unwrap_or(false),
-        None => false,
+    let has_access = match get_team_armory_level(pool, level, team.0).await {
+        Ok(Some(access)) => access,
+        Ok(None) => false,
+        Err(e) => {
+            println!("Database error when checking team armory level: {}", e);
+            return Err(e.into());
+        }
     };
 
     if !has_access {
         println!(
             "Team '{}' doesn't have access to combat level {} monsters",
-            team.team_name,
+            team.1,
             source_level.unwrap()
         );
         return Ok(());
@@ -156,7 +128,7 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
 
     println!(
         "Processing drop for user '{}' of team '{}'",
-        drop.user, team.team_name
+        drop.user, team.1
     );
 
     // Process each item in the drop
@@ -173,76 +145,32 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
             println!("Found noteworthy item: {}", item_name);
 
             // Check if this resource already exists for the team
-            let existing_resource = sqlx::query!(
-                r#"
-                    SELECT quantity 
-                    FROM resources
-                    WHERE team_id = $1 AND resource_name = $2
-                    "#,
-                team.team_id,
-                item_name
-            )
-            .fetch_optional(pool)
-            .await?;
+            let existing_resource = get_existing_resource(pool, team.0, &item_name).await?;
 
             match existing_resource {
                 Some(resource) => {
                     // Update quantity of existing resource
-                    let new_quantity = resource.quantity + quantity;
-                    sqlx::query!(
-                        r#"
-                            UPDATE resources
-                            SET quantity = $1
-                            WHERE team_id = $2 AND resource_name = $3
-                            "#,
-                        new_quantity,
-                        team.team_id,
-                        item_name
-                    )
-                    .execute(pool)
-                    .await?;
+                    let new_quantity = resource + quantity;
+                    update_resource_quantity(pool, team.0, &item_name, new_quantity).await?;
 
                     println!(
                         "Updated resource quantity for team '{}': {} x {} (new total: {})",
-                        team.team_name, item_name, quantity, new_quantity
+                        team.1, item_name, quantity, new_quantity
                     );
                 }
                 None => {
                     // Insert new resource entry
-
-                    // get new id
-                    let max_id_result = sqlx::query!(
-                        r#"
-                        SELECT MAX(id) as "max_id: i32" FROM resources
-                        "#
-                    )
-                    .fetch_one(pool)
-                    .await?;
-
-                    let next_id = max_id_result.max_id.unwrap_or(0) + 1;
-
-                    sqlx::query!(
-                        r#"
-                            INSERT INTO resources (team_id, id, quantity, resource_name)
-                            VALUES ($1, $2, $3, $4)
-                            "#,
-                        team.team_id,
-                        next_id,
-                        quantity,
-                        item_name
-                    )
-                    .execute(pool)
-                    .await?;
+                    insert_new_resource(pool, team.0, &item_name, quantity).await?;
 
                     println!(
                         "Added new resource for team '{}': {} x {}",
-                        team.team_name, item_name, quantity
+                        team.1, item_name, quantity
                     );
                 }
             }
 
             // also update any embed resource messages
-            let _ = update_team_embeds(ctx, data, &team.team_name).await;
+            let _ = update_team_embeds(ctx, data, &team.1).await;
         }
     }
 

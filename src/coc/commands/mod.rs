@@ -16,15 +16,8 @@ pub async fn list_teams(ctx: Context<'_>) -> Result<(), Error> {
         std::env::current_dir().unwrap_or_default()
     );
 
-    // Query all teams from the database
-    let teams = sqlx::query!(
-        r#"
-        SELECT id, name 
-        FROM teams
-        "#
-    )
-    .fetch_all(pool)
-    .await?;
+    // Query all teams from the database using the database function
+    let teams = crate::coc::database::get_all_teams(pool).await?;
 
     if teams.is_empty() {
         ctx.say("No teams found in the database.").await?;
@@ -34,7 +27,7 @@ pub async fn list_teams(ctx: Context<'_>) -> Result<(), Error> {
     // Format the results
     let response = teams
         .iter()
-        .map(|team| format!("• {} (ID: {:?})", team.name, team.id))
+        .map(|(id, name)| format!("• {} (ID: {})", name, id))
         .collect::<Vec<_>>()
         .join("\n");
 
@@ -56,17 +49,8 @@ pub async fn add_team(
 
     println!("checking if team exists");
 
-    // Check if team with this name already exists
-    let existing_team = sqlx::query!(
-        r#"
-        SELECT id as "id: Option<i32>" FROM teams WHERE name = $1
-        "#,
-        team_name
-    )
-    .fetch_optional(pool)
-    .await?;
-
-    if existing_team.is_some() {
+    // Check if team with this name already exists using the database function
+    if let Some(_) = crate::coc::database::get_team_by_name(pool, &team_name).await? {
         ctx.say(format!("Team '{}' already exists!", team_name))
             .await?;
         return Ok(());
@@ -75,61 +59,22 @@ pub async fn add_team(
     println!("team does not exist");
     println!("creating team");
 
-    // Get the last inserted team ID
-    // Get the max ID from the teams table
-    let max_id_result = sqlx::query!(
-        r#"
-        SELECT MAX(id) as "max_id: i32" FROM teams
-        "#
-    )
-    .fetch_one(pool)
-    .await?;
-
-    // The first inserted team will have ID 1, otherwise we increment the max ID
-    let next_id = max_id_result.max_id.unwrap_or(0) + 1;
+    // Get the next available team ID
+    let next_id = crate::coc::database::get_max_team_id(pool).await? + 1;
     println!("next id: {}", next_id);
 
     // Insert the team into the database
-    let _ = sqlx::query!(
-        r#"
-        INSERT INTO teams (id, name) VALUES ($1, $2)
-        "#,
-        next_id,
-        team_name
-    )
-    .fetch_optional(pool)
-    .await?;
+    crate::coc::database::insert_team(pool, next_id, &team_name).await?;
 
     // Insert a new set of buildings into the database
     let town_config = &ctx.data().town_config;
 
-    // Get the maximum building ID currently in the database
-    let max_building_id_result = sqlx::query!(
-        r#"
-        SELECT MAX(id) as "max_id: i32" FROM team_buildings
-        "#
-    )
-    .fetch_one(pool)
-    .await?;
-
-    // Start with max_id + 1 or 1 if table is empty
-    let mut building_id = max_building_id_result.max_id.unwrap_or(0) + 1;
+    // Get the next available building ID
+    let mut building_id = crate::coc::database::get_max_building_id(pool).await? + 1;
 
     // Loop through the buildings and insert them into the database
     for (building, _) in &town_config.buildings {
-        let _ = sqlx::query!(
-            r#"
-            INSERT INTO team_buildings (id, team_id, building_name, level)
-            VALUES ($1, $2, $3, $4)
-            "#,
-            building_id,
-            next_id,
-            building,
-            1,
-        )
-        .fetch_optional(pool)
-        .await?;
-
+        crate::coc::database::insert_team_building(pool, building_id, next_id, building, 1).await?;
         building_id += 1;
     }
 
@@ -154,41 +99,17 @@ pub async fn remove_team(
     let team_name = team_name.to_lowercase();
 
     // Check if team with this name exists
-    let existing_team = sqlx::query!(
-        r#"
-        SELECT id as "id: Option<i32>", name FROM teams WHERE name = $1
-        "#,
-        team_name
-    )
-    .fetch_optional(pool)
-    .await?;
-
-    // If the team doesn't exist, inform the user and return early
-    if let None = existing_team {
+    if let None = crate::coc::database::get_team_by_name(pool, &team_name).await? {
         ctx.say(format!("No team found with name '{}'", team_name))
             .await?;
         return Ok(());
     }
 
     // Delete any buildings associated with this team first
-    sqlx::query!(
-        r#"
-        DELETE FROM team_buildings WHERE team_id = (SELECT id FROM teams WHERE name = $1)
-        "#,
-        team_name
-    )
-    .execute(pool)
-    .await?;
+    crate::coc::database::delete_team_buildings(pool, &team_name).await?;
 
     // Delete the team from the database
-    sqlx::query!(
-        r#"
-        DELETE FROM teams WHERE name = $1
-        "#,
-        team_name
-    )
-    .execute(pool)
-    .await?;
+    crate::coc::database::delete_team(pool, &team_name).await?;
 
     ctx.say(format!(
         "Team '{}' has been deleted successfully.",
@@ -214,18 +135,8 @@ pub async fn add_player(
     let team_name = team_name.to_lowercase();
 
     // Check if the team exists
-    let team = sqlx::query!(
-        r#"
-        SELECT id as "id: Option<i32>" FROM teams WHERE name = $1
-        "#,
-        team_name
-    )
-    .fetch_optional(pool)
-    .await?;
-
-    // If the team doesn't exist, inform the user and return early
-    let team_id = match team {
-        Some(team) => team.id.ok_or_else(|| Error::from("Team ID is null"))?,
+    let team_id = match crate::coc::database::get_team_by_name(pool, &team_name).await? {
+        Some(id) => id,
         None => {
             ctx.say(format!("No team found with name '{}'", team_name))
                 .await?;
@@ -234,18 +145,7 @@ pub async fn add_player(
     };
 
     // Check if the player is already on this team
-    let existing_member = sqlx::query!(
-        r#"
-        SELECT id as "id: Option<i32>" FROM team_members 
-        WHERE team_id = $1 AND username = $2
-        "#,
-        team_id,
-        username
-    )
-    .fetch_optional(pool)
-    .await?;
-
-    if existing_member.is_some() {
+    if let Some(_) = crate::coc::database::get_team_member(pool, team_id, &username).await? {
         ctx.say(format!(
             "Player '{}' is already a member of team '{}'",
             username, team_name
@@ -254,32 +154,12 @@ pub async fn add_player(
         return Ok(());
     }
 
-    // Get the last inserted team ID
-    // Get the max ID from the teams table
-    let max_id_result = sqlx::query!(
-        r#"
-        SELECT MAX(id) as "max_id: i32" FROM team_members
-        "#
-    )
-    .fetch_one(pool)
-    .await?;
-
-    // The first inserted team will have ID 1, otherwise we increment the max ID
-    let next_id = max_id_result.max_id.unwrap_or(0) + 1;
+    // Get the next available member ID
+    let next_id = crate::coc::database::get_max_team_member_id(pool).await? + 1;
     println!("next id: {}", next_id);
 
     // Add the player to the team
-    sqlx::query!(
-        r#"
-        INSERT INTO team_members (id, team_id, username)
-        VALUES ($1, $2, $3)
-        "#,
-        next_id,
-        team_id,
-        username
-    )
-    .execute(pool)
-    .await?;
+    crate::coc::database::insert_team_member(pool, next_id, team_id, &username).await?;
 
     ctx.say(format!(
         "Successfully added player '{}' to team '{}'",
@@ -303,55 +183,24 @@ pub async fn remove_player(
     let username = username.to_lowercase();
 
     // Check if player exists in any team
-    let existing_member = sqlx::query!(
-        r#"
-        SELECT id as "id: Option<i32>", team_id as "team_id: i32" 
-        FROM team_members 
-        WHERE username = $1
-        "#,
-        username
-    )
-    .fetch_all(pool)
-    .await?;
+    let team_info = crate::coc::database::get_user_team(pool, &username).await?;
 
     // If player is not in any team, inform the user
-    if existing_member.is_empty() {
+    if team_info.is_none() {
         ctx.say(format!("Player '{}' is not a member of any team", username))
             .await?;
         return Ok(());
     }
 
-    // Get team names for feedback message
-    let mut team_names = Vec::new();
-    for member in &existing_member {
-        let team = sqlx::query!(
-            r#"
-            SELECT name FROM teams WHERE id = $1
-            "#,
-            member.team_id
-        )
-        .fetch_one(pool)
-        .await?;
-
-        team_names.push(team.name);
-    }
+    // Get team name for feedback message
+    let (_, team_name) = team_info.unwrap();
 
     // Remove the player from all teams
-    sqlx::query!(
-        r#"
-        DELETE FROM team_members 
-        WHERE username = $1
-        "#,
-        username
-    )
-    .execute(pool)
-    .await?;
+    crate::coc::database::delete_team_members(pool, &username).await?;
 
     ctx.say(format!(
-        "Successfully removed player '{}' from {} team(s): {}",
-        username,
-        team_names.len(),
-        team_names.join(", ")
+        "Successfully removed player '{}' from team: {}",
+        username, team_name
     ))
     .await?;
 
@@ -393,46 +242,22 @@ pub async fn create_resource_embed(
                     let variant = "resources".to_string();
 
                     // Check if this team already has an embed of this variant
-                    let existing = sqlx::query!(
-                        r#"
-                        SELECT id as "id: Option<i32>" FROM team_embeds 
-                        WHERE team_id = $1 AND variant = $2
-                        "#,
-                        team.id,
-                        variant
-                    )
-                    .fetch_optional(pool)
-                    .await?;
+                    let existing = crate::coc::database::get_team_embeds(pool, team.id)
+                        .await?
+                        .into_iter()
+                        .find(|(_, _, _, v)| v == &variant);
 
-                    // Update existing or insert new record
-                    if let Some(_record) = existing {
+                    if let Some((embed_id, _, _, _)) = existing {
                         // Update existing record
-                        sqlx::query!(
-                            r#"
-                            UPDATE team_embeds 
-                            SET channel_id = $1, message_id = $2
-                            WHERE team_id = $3 AND variant = $4
-                            "#,
-                            channel_id,
-                            message_id,
-                            team.id,
-                            variant
+                        crate::coc::database::update_team_embed(
+                            pool, embed_id, channel_id, message_id,
                         )
-                        .execute(pool)
                         .await?;
                     } else {
                         // Insert a new embed record
-                        sqlx::query!(
-                            r#"
-                            INSERT INTO team_embeds (team_id, channel_id, variant, message_id)
-                            VALUES ($1, $2, $3, $4)
-                            "#,
-                            team.id,
-                            channel_id,
-                            variant,
-                            message_id
+                        crate::coc::database::insert_team_embed(
+                            pool, team.id, channel_id, &variant, message_id,
                         )
-                        .execute(pool)
                         .await?;
                     }
 
@@ -466,19 +291,9 @@ pub async fn list_team_resources(
     // Convert team name to lowercase for consistent lookups
     let team_name = team_name.to_lowercase();
 
-    // Check if the team exists and get its ID
-    let team = sqlx::query!(
-        r#"
-        SELECT id as "id: Option<i32>" FROM teams WHERE name = $1
-        "#,
-        team_name
-    )
-    .fetch_optional(pool)
-    .await?;
-
-    // If the team doesn't exist, inform the user and return early
-    let team_id = match team {
-        Some(team) => team.id.ok_or_else(|| Error::from("Team ID is null"))?,
+    // Check if the team exists and get its ID using the database function
+    let team_id = match crate::coc::database::get_team_by_name(pool, &team_name).await? {
+        Some(id) => id,
         None => {
             ctx.say(format!("No team found with name '{}'", team_name))
                 .await?;
@@ -486,17 +301,8 @@ pub async fn list_team_resources(
         }
     };
 
-    // Query resources for this team
-    let resources = sqlx::query!(
-        r#"
-        SELECT id as "id: Option<i32>", resource_name, quantity 
-        FROM resources
-        WHERE team_id = $1
-        "#,
-        team_id
-    )
-    .fetch_all(pool)
-    .await?;
+    // Query resources for this team using the database function
+    let resources = crate::coc::database::get_team_resources(pool, team_id).await?;
 
     if resources.is_empty() {
         ctx.say(format!("No resources found for team '{}'", team_name))
@@ -507,11 +313,8 @@ pub async fn list_team_resources(
     // Format the results
     let response = resources
         .iter()
-        .map(|res| {
-            format!(
-                "• **{:?}**: {} (Amount: {})",
-                res.id, res.resource_name, res.quantity
-            )
+        .map(|(id, resource_name, quantity)| {
+            format!("• **{:?}**: {} (Amount: {})", id, resource_name, quantity)
         })
         .collect::<Vec<_>>()
         .join("\n");
@@ -532,31 +335,21 @@ pub async fn update_team_embeds(
     team_name: &str,
 ) -> Result<(usize, Vec<String>), Error> {
     // Get database connection from context data
-    // let pool = &ctx.data().database;
     let pool = &data.database;
 
     // Convert team name to lowercase for consistent lookups
     let team_name = team_name.to_lowercase();
 
     // Get team data from database
-    let team_opt = get_team(data, &team_name.to_string()).await?;
+    let team_opt = get_team(data, &team_name).await?;
 
     let team = match team_opt {
         Some(team) => team,
         None => return Ok((0, vec!["Team not found".to_string()])), // No team found
     };
 
-    // Find all embeds for this team
-    let records = sqlx::query!(
-        r#"
-        SELECT id as "id: Option<i32>", channel_id, message_id, variant
-        FROM team_embeds
-        WHERE team_id = $1 AND message_id IS NOT NULL
-        "#,
-        team.id
-    )
-    .fetch_all(pool)
-    .await?;
+    // Find all embeds for this team using the database function
+    let records = crate::coc::database::get_team_embeds(pool, team.id).await?;
 
     if records.is_empty() {
         return Ok((0, vec!["No embeds found for this team".to_string()]));
@@ -566,17 +359,15 @@ pub async fn update_team_embeds(
     let mut results = Vec::new();
 
     // Update each embed
-    for record in records {
-        let channel_id_int = record.channel_id;
-        let message_id_int = record.message_id.expect("msg_id is null");
+    for (embed_id, channel_id_int, message_id_int, variant) in records {
         let channel_id = serenity::ChannelId::new(channel_id_int as u64);
         let message_id = serenity::MessageId::new(message_id_int as u64);
 
         // Choose embed based on variant
-        let embed = match record.variant.as_str() {
+        let embed = match variant.as_str() {
             "buildings" => {
                 // For buildings variant, use the buildings embed
-                match get_buildings_embed(data, &team_name.to_string()).await? {
+                match get_buildings_embed(data, &team_name).await? {
                     Some(buildings_embed) => buildings_embed,
                     None => {
                         results.push(format!(
@@ -613,31 +404,22 @@ pub async fn update_team_embeds(
                 updated_count += 1;
                 results.push(format!(
                     "Updated {} embed in channel {}",
-                    record.variant, channel_id
+                    variant, channel_id
                 ));
             }
             Err(err) => {
                 results.push(format!(
                     "Failed to update {} embed in channel {}: {}",
-                    record.variant, channel_id, err
+                    variant, channel_id, err
                 ));
 
                 // If message was deleted, remove it from tracking
                 if err.to_string().contains("Unknown Message") {
-                    sqlx::query!(
-                        r#"
-                        UPDATE team_embeds
-                        SET message_id = NULL
-                        WHERE id = $1
-                        "#,
-                        record.id
-                    )
-                    .execute(pool)
-                    .await?;
+                    crate::coc::database::mark_embed_as_deleted(pool, embed_id).await?;
 
                     results.push(format!(
                         "Marked message as deleted in database: {} embed in channel {}",
-                        record.variant, channel_id
+                        variant, channel_id
                     ));
                 }
             }
@@ -1007,22 +789,9 @@ pub async fn create_buildings_embed(
             let message_id = message.id.get() as i64;
             let variant = "buildings".to_string();
 
-            // Check if the team exists and get its ID
-            let team = sqlx::query!(
-                r#"
-        SELECT id as "id: Option<i32>", name FROM teams WHERE name = $1
-        "#,
-                team_name
-            )
-            .fetch_optional(pool)
-            .await?;
-
-            // If the team doesn't exist, inform the user and return early
-            let team_id = match team {
-                Some(team) => (
-                    team.id.ok_or_else(|| Error::from("Team ID is null"))?,
-                    team.name,
-                ),
+            // Get the team ID using the database function
+            let team_id = match crate::coc::database::get_team_by_name(pool, &team_name).await? {
+                Some(id) => id,
                 None => {
                     println!("no team found with name '{}'", team_name);
                     return Ok(());
@@ -1030,48 +799,22 @@ pub async fn create_buildings_embed(
             };
 
             // Check if this team already has an embed of this variant
-            let existing = sqlx::query!(
-                r#"
-                SELECT id as "id: Option<i32>" FROM team_embeds 
-                WHERE team_id = $1 AND variant = $2
-                "#,
-                team_id.0,
-                variant
-            )
-            .fetch_optional(pool)
-            .await?;
+            let existing = crate::coc::database::get_team_embeds(pool, team_id)
+                .await?
+                .into_iter()
+                .find(|(_, _, _, v)| v == &variant);
 
-            // Update existing or insert new record
-            if let Some(_record) = existing {
+            if let Some((embed_id, _, _, _)) = existing {
                 println!("Updating existing record");
                 // Update existing record
-                sqlx::query!(
-                    r#"
-                    UPDATE team_embeds 
-                    SET channel_id = $1, message_id = $2
-                    WHERE team_id = $3 AND variant = $4
-                    "#,
-                    channel_id,
-                    message_id,
-                    team_id.0,
-                    variant
-                )
-                .execute(pool)
-                .await?;
+                crate::coc::database::update_team_embed(pool, embed_id, channel_id, message_id)
+                    .await?;
             } else {
                 println!("Inserting new record");
                 // Insert a new embed record
-                sqlx::query!(
-                    r#"
-                    INSERT INTO team_embeds (team_id, channel_id, variant, message_id)
-                    VALUES ($1, $2, $3, $4)
-                    "#,
-                    team_id.0,
-                    channel_id,
-                    variant,
-                    message_id
+                crate::coc::database::insert_team_embed(
+                    pool, team_id, channel_id, &variant, message_id,
                 )
-                .execute(pool)
                 .await?;
             }
 

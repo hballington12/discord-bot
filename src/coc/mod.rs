@@ -8,6 +8,7 @@ use serenity::model::Timestamp;
 pub mod bestiary;
 pub mod buildings;
 pub mod commands;
+pub mod database;
 pub mod patterns;
 
 /// Internal struct for a team.
