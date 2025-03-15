@@ -1,4 +1,9 @@
+use crate::coc::get_team;
 use crate::{Context, Error};
+
+use poise::serenity_prelude as serenity;
+use serenity::builder::{CreateAttachment, CreateEmbed, CreateEmbedFooter, CreateMessage};
+use serenity::model::Timestamp;
 
 /// Lists all teams in the database
 #[poise::command(slash_command, prefix_command, guild_only)]
@@ -305,6 +310,159 @@ pub async fn remove_player(
         username,
         team_names.len(),
         team_names.join(", ")
+    ))
+    .await?;
+
+    Ok(())
+}
+
+/// Creates an embed message with team resources
+#[poise::command(slash_command, prefix_command)]
+pub async fn create_resource_embed(
+    ctx: Context<'_>,
+    #[description = "Name of the team"] team_name: String,
+) -> Result<(), Error> {
+    // Get team data from database
+    let team_opt = get_team(ctx, &team_name).await?;
+
+    match team_opt {
+        Some(team) => {
+            // Use the team's create_message method
+            let message_builder = team.create_message().await?;
+
+            // Send the message
+            println!("Sending team resource message");
+            let msg = ctx
+                .channel_id()
+                .send_message(&ctx.http(), message_builder)
+                .await;
+
+            if let Err(why) = msg {
+                println!("Error sending message: {why:?}");
+            } else {
+                println!("Team resource message sent successfully");
+            }
+        }
+        None => {
+            ctx.say(format!("No team found with name '{}'", team_name))
+                .await?;
+        }
+    }
+
+    ctx.say("done").await?;
+
+    Ok(())
+}
+
+// /// Creates an embed message with a footer and fields
+// /// Will show the current resources for the team
+// #[poise::command(slash_command, prefix_command)]
+// pub async fn create_resource_embed(
+//     ctx: Context<'_>,
+//     #[description = "Name of the team"] team_name: String,
+// ) -> Result<(), Error> {
+//     let footer = CreateEmbedFooter::new("This is a footer");
+//     let title = format!("{} Team Resources", team_name);
+//     let embed = CreateEmbed::new()
+//         .title(title)
+//         .description("This is a description")
+//         .image("attachment://ferris_eyes.png")
+//         .fields(vec![
+//             ("This is the first field", "This is a field body", true),
+//             ("This is the second field", "Both fields are inline", true),
+//         ])
+//         .field(
+//             "This is the third field",
+//             "This is not an inline field",
+//             false,
+//         )
+//         .footer(footer)
+//         // Add a timestamp for the current time
+//         // This also accepts a rfc3339 Timestamp
+//         .timestamp(Timestamp::now());
+
+//     println!("Creating message");
+//     let builder = CreateMessage::new()
+//         .content("Hello, World!")
+//         .embed(embed)
+//         .add_file(CreateAttachment::path("./ferris_eyes.png").await.unwrap());
+
+//     println!("Sending message");
+//     let msg = ctx.channel_id().send_message(&ctx.http(), builder).await;
+
+//     if let Err(why) = msg {
+//         println!("Error sending message: {why:?}");
+//     }
+//     println!("Message sent");
+
+//     Ok(())
+// }
+
+/// Lists all resources for a specific team
+#[poise::command(slash_command, prefix_command, guild_only)]
+pub async fn list_team_resources(
+    ctx: Context<'_>,
+    #[description = "Name of the team"] team_name: String,
+) -> Result<(), Error> {
+    // Get database connection from context data
+    let pool = &ctx.data().database;
+
+    // Convert team name to lowercase for consistent lookups
+    let team_name = team_name.to_lowercase();
+
+    // Check if the team exists and get its ID
+    let team = sqlx::query!(
+        r#"
+        SELECT id as "id: Option<i32>" FROM teams WHERE name = $1
+        "#,
+        team_name
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    // If the team doesn't exist, inform the user and return early
+    let team_id = match team {
+        Some(team) => team.id.ok_or_else(|| Error::from("Team ID is null"))?,
+        None => {
+            ctx.say(format!("No team found with name '{}'", team_name))
+                .await?;
+            return Ok(());
+        }
+    };
+
+    // Query resources for this team
+    let resources = sqlx::query!(
+        r#"
+        SELECT id as "id: Option<i32>", resource_name, quantity 
+        FROM resources
+        WHERE team_id = $1
+        "#,
+        team_id
+    )
+    .fetch_all(pool)
+    .await?;
+
+    if resources.is_empty() {
+        ctx.say(format!("No resources found for team '{}'", team_name))
+            .await?;
+        return Ok(());
+    }
+
+    // Format the results
+    let response = resources
+        .iter()
+        .map(|res| {
+            format!(
+                "• **{:?}**: {} (Amount: {})",
+                res.id, res.resource_name, res.quantity
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    ctx.say(format!(
+        "**Resources for team '{}':**\n{}",
+        team_name, response
     ))
     .await?;
 
