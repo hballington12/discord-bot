@@ -1,6 +1,7 @@
 use poise::serenity_prelude as serenity;
 
 use crate::coc;
+use crate::coc::commands::update_team_embeds;
 use crate::{Context, Data, Error};
 
 #[cfg(test)]
@@ -186,6 +187,9 @@ async fn process_drop(data: &Data, drop: DinkDrop) -> Result<(), Error> {
                     );
                 }
             }
+
+            // also update any embed resource messages
+            update_team_embeds()
         }
     }
 

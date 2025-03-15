@@ -1,6 +1,7 @@
 use crate::coc::get_team;
 use crate::{Context, Error};
 
+use ::serenity::builder;
 use poise::serenity_prelude as serenity;
 use serenity::builder::{CreateAttachment, CreateEmbed, CreateEmbedFooter, CreateMessage};
 use serenity::model::Timestamp;
@@ -322,6 +323,9 @@ pub async fn create_resource_embed(
     ctx: Context<'_>,
     #[description = "Name of the team"] team_name: String,
 ) -> Result<(), Error> {
+    // Get database connection from context data
+    let pool = &ctx.data().database;
+
     // Get team data from database
     let team_opt = get_team(ctx, &team_name).await?;
 
@@ -332,15 +336,71 @@ pub async fn create_resource_embed(
 
             // Send the message
             println!("Sending team resource message");
-            let msg = ctx
+            let msg_result = ctx
                 .channel_id()
                 .send_message(&ctx.http(), message_builder)
                 .await;
 
-            if let Err(why) = msg {
-                println!("Error sending message: {why:?}");
-            } else {
-                println!("Team resource message sent successfully");
+            match msg_result {
+                Ok(message) => {
+                    println!("Team resource message sent successfully");
+
+                    // Record the embed in the team_embeds table
+                    let channel_id = ctx.channel_id().get() as i64;
+                    let message_id = message.id.get() as i64;
+                    let variant = "resources".to_string();
+
+                    // Check if this team already has an embed of this variant
+                    let existing = sqlx::query!(
+                        r#"
+                        SELECT id as "id: Option<i32>" FROM team_embeds 
+                        WHERE team_id = $1 AND variant = $2
+                        "#,
+                        team.id,
+                        variant
+                    )
+                    .fetch_optional(pool)
+                    .await?;
+
+                    // Update existing or insert new record
+                    if let Some(record) = existing {
+                        // Update existing record
+                        sqlx::query!(
+                            r#"
+                            UPDATE team_embeds 
+                            SET channel_id = $1, message_id = $2
+                            WHERE team_id = $3 AND variant = $4
+                            "#,
+                            channel_id,
+                            message_id,
+                            team.id,
+                            variant
+                        )
+                        .execute(pool)
+                        .await?;
+                    } else {
+                        // Insert a new embed record
+                        sqlx::query!(
+                            r#"
+                            INSERT INTO team_embeds (team_id, channel_id, variant, message_id)
+                            VALUES ($1, $2, $3, $4)
+                            "#,
+                            team.id,
+                            channel_id,
+                            variant,
+                            message_id
+                        )
+                        .execute(pool)
+                        .await?;
+                    }
+
+                    ctx.say("Resource embed created and recorded successfully!")
+                        .await?;
+                }
+                Err(why) => {
+                    println!("Error sending message: {why:?}");
+                    ctx.say(format!("Error sending message: {}", why)).await?;
+                }
             }
         }
         None => {
@@ -349,54 +409,8 @@ pub async fn create_resource_embed(
         }
     }
 
-    ctx.say("done").await?;
-
     Ok(())
 }
-
-// /// Creates an embed message with a footer and fields
-// /// Will show the current resources for the team
-// #[poise::command(slash_command, prefix_command)]
-// pub async fn create_resource_embed(
-//     ctx: Context<'_>,
-//     #[description = "Name of the team"] team_name: String,
-// ) -> Result<(), Error> {
-//     let footer = CreateEmbedFooter::new("This is a footer");
-//     let title = format!("{} Team Resources", team_name);
-//     let embed = CreateEmbed::new()
-//         .title(title)
-//         .description("This is a description")
-//         .image("attachment://ferris_eyes.png")
-//         .fields(vec![
-//             ("This is the first field", "This is a field body", true),
-//             ("This is the second field", "Both fields are inline", true),
-//         ])
-//         .field(
-//             "This is the third field",
-//             "This is not an inline field",
-//             false,
-//         )
-//         .footer(footer)
-//         // Add a timestamp for the current time
-//         // This also accepts a rfc3339 Timestamp
-//         .timestamp(Timestamp::now());
-
-//     println!("Creating message");
-//     let builder = CreateMessage::new()
-//         .content("Hello, World!")
-//         .embed(embed)
-//         .add_file(CreateAttachment::path("./ferris_eyes.png").await.unwrap());
-
-//     println!("Sending message");
-//     let msg = ctx.channel_id().send_message(&ctx.http(), builder).await;
-
-//     if let Err(why) = msg {
-//         println!("Error sending message: {why:?}");
-//     }
-//     println!("Message sent");
-
-//     Ok(())
-// }
 
 /// Lists all resources for a specific team
 #[poise::command(slash_command, prefix_command, guild_only)]
@@ -465,6 +479,130 @@ pub async fn list_team_resources(
         team_name, response
     ))
     .await?;
+
+    Ok(())
+}
+
+/// Updates all registered embeds for a specific team
+pub async fn update_team_embeds(
+    ctx: &Context<'_>,
+    team_name: &str,
+) -> Result<(usize, Vec<String>), Error> {
+    // Get database connection from context data
+    let pool = &ctx.data().database;
+
+    // Convert team name to lowercase for consistent lookups
+    let team_name = team_name.to_lowercase();
+
+    // Get team data from database
+    let team_opt = get_team(*ctx, &team_name.to_string()).await?;
+
+    let team = match team_opt {
+        Some(team) => team,
+        None => return Ok((0, vec!["Team not found".to_string()])), // No team found
+    };
+
+    // Find all embeds for this team
+    let records = sqlx::query!(
+        r#"
+        SELECT id as "id: Option<i32>", channel_id, message_id, variant
+        FROM team_embeds
+        WHERE team_id = $1 AND message_id IS NOT NULL
+        "#,
+        team.id
+    )
+    .fetch_all(pool)
+    .await?;
+
+    if records.is_empty() {
+        return Ok((0, vec!["No embeds found for this team".to_string()]));
+    }
+
+    let mut updated_count = 0;
+    let mut results = Vec::new();
+
+    // Update each embed
+    for record in records {
+        let channel_id_int = record.channel_id;
+        let message_id_int = record.message_id.expect("msg_id is null");
+        let channel_id = serenity::ChannelId::new(channel_id_int as u64);
+        let message_id = serenity::MessageId::new(message_id_int as u64);
+
+        let embed = team.create_embed();
+
+        // Try to edit the message
+        let result = channel_id
+            .edit_message(
+                &ctx.http(),
+                message_id,
+                serenity::builder::EditMessage::new()
+                    .content("This message was edited!")
+                    .embed(embed),
+            )
+            .await;
+
+        match result {
+            Ok(_) => {
+                updated_count += 1;
+                results.push(format!(
+                    "Updated {} embed in channel {}",
+                    record.variant, channel_id
+                ));
+            }
+            Err(err) => {
+                results.push(format!(
+                    "Failed to update {} embed in channel {}: {}",
+                    record.variant, channel_id, err
+                ));
+
+                // If message was deleted, remove it from tracking
+                if err.to_string().contains("Unknown Message") {
+                    sqlx::query!(
+                        r#"
+                        UPDATE team_embeds
+                        SET message_id = NULL
+                        WHERE id = $1
+                        "#,
+                        record.id
+                    )
+                    .execute(pool)
+                    .await?;
+
+                    results.push(format!(
+                        "Marked message as deleted in database: {} embed in channel {}",
+                        record.variant, channel_id
+                    ));
+                }
+            }
+        }
+    }
+
+    Ok((updated_count, results))
+}
+
+/// Command to update all embeds for a team
+#[poise::command(slash_command, prefix_command)]
+pub async fn update_embeds(
+    ctx: Context<'_>,
+    #[description = "Name of the team"] team_name: String,
+) -> Result<(), Error> {
+    let (count, results) = update_team_embeds(&ctx, &team_name).await?;
+
+    let summary = if count > 0 {
+        format!(
+            "Successfully updated {} embeds for team '{}'",
+            count, team_name
+        )
+    } else {
+        format!("No embeds were updated for team '{}'", team_name)
+    };
+
+    // Join the results with line breaks
+    let details = results.join("\n");
+
+    // Send the response
+    ctx.say(format!("{}\n\nDetails:\n{}", summary, details))
+        .await?;
 
     Ok(())
 }
