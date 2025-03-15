@@ -572,8 +572,30 @@ pub async fn update_team_embeds(
         let channel_id = serenity::ChannelId::new(channel_id_int as u64);
         let message_id = serenity::MessageId::new(message_id_int as u64);
 
-        let embd = get_buildings_embed(data, &team_name.to_string()).await?;
-        let embed = team.make_resource_embed();
+        // Choose embed based on variant
+        let embed = match record.variant.as_str() {
+            "buildings" => {
+                // For buildings variant, use the buildings embed
+                match get_buildings_embed(data, &team_name.to_string()).await? {
+                    Some(buildings_embed) => buildings_embed,
+                    None => {
+                        results.push(format!(
+                            "Failed to generate buildings embed for team {}",
+                            team_name
+                        ));
+                        continue; // Skip to next embed
+                    }
+                }
+            }
+            "resources" => {
+                // For resources variant, use the resource embed
+                team.make_resource_embed()
+            }
+            unknown => {
+                results.push(format!("Unknown embed variant: {}", unknown));
+                continue; // Skip to next embed
+            }
+        };
 
         // Try to edit the message
         let result = channel_id
@@ -625,7 +647,7 @@ pub async fn update_team_embeds(
     Ok((updated_count, results))
 }
 
-async fn get_buildings_embed(data: &Data, team_name: &str) -> Result<(), Error> {
+async fn get_buildings_embed(data: &Data, team_name: &str) -> Result<Option<CreateEmbed>, Error> {
     // Convert team name to lowercase for consistent lookups
     let team_name = team_name.to_lowercase();
     let town_config = &data.town_config;
@@ -649,7 +671,7 @@ async fn get_buildings_embed(data: &Data, team_name: &str) -> Result<(), Error> 
         ),
         None => {
             println!("no team found with name '{}'", team_name);
-            return Ok(());
+            return Ok(None);
         }
     };
 
@@ -668,7 +690,7 @@ async fn get_buildings_embed(data: &Data, team_name: &str) -> Result<(), Error> 
 
     if buildings.is_empty() {
         println!("no buildings found for team '{}'", team_id.1);
-        return Ok(());
+        return Ok(None);
     }
 
     // Create the embed
@@ -732,29 +754,7 @@ async fn get_buildings_embed(data: &Data, team_name: &str) -> Result<(), Error> 
     // Add the buildings as a field
     embed = embed.field("Buildings", building_list, false);
 
-    // Add town hall level summary
-    let townhall = buildings
-        .iter()
-        .find(|b| b.building_name.to_lowercase() == "townhall");
-
-    if let Some(th) = townhall {
-        let th_config = town_config.buildings.get("townhall");
-        let unlocked_level = th.level + 1;
-
-        let summary = match th_config {
-            Some(config) => {
-                format!(
-                    "**Town Hall Level**: {}/{}\n**Max Building Level**: {}",
-                    th.level, config.max_level, unlocked_level,
-                )
-            }
-            None => format!("**Town Hall Level**: {}", th.level),
-        };
-
-        let _ = embed.field("Town Summary", summary, false);
-    }
-
-    todo!()
+    Ok(Some(embed))
 }
 
 /// Upgrades a building for a team
@@ -975,135 +975,18 @@ pub async fn create_buildings_embed(
     // Get database connection from context data
     let data = ctx.data();
     let pool = &data.database;
-    let town_config = &data.town_config;
 
     // Convert team name to lowercase for consistent lookups
     let team_name = team_name.to_lowercase();
 
-    // Check if the team exists and get its ID
-    let team = sqlx::query!(
-        r#"
-        SELECT id as "id: Option<i32>", name FROM teams WHERE name = $1
-        "#,
-        team_name
-    )
-    .fetch_optional(pool)
-    .await?;
-
-    // If the team doesn't exist, inform the user and return early
-    let team_id = match team {
-        Some(team) => (
-            team.id.ok_or_else(|| Error::from("Team ID is null"))?,
-            team.name,
-        ),
+    let embed = match get_buildings_embed(data, &team_name).await? {
+        Some(embed) => embed,
         None => {
-            ctx.say(format!("No team found with name '{}'", team_name))
+            ctx.say(format!("No buildings found for team '{}'", team_name))
                 .await?;
             return Ok(());
         }
     };
-
-    // Query buildings for this team
-    let buildings = sqlx::query!(
-        r#"
-        SELECT id as "id: Option<i32>", building_name, level
-        FROM team_buildings
-        WHERE team_id = $1
-        ORDER BY building_name ASC
-        "#,
-        team_id.0
-    )
-    .fetch_all(pool)
-    .await?;
-
-    if buildings.is_empty() {
-        ctx.say(format!("No buildings found for team '{}'", team_name))
-            .await?;
-        return Ok(());
-    }
-
-    // Create the embed
-    let mut embed = serenity::builder::CreateEmbed::new()
-        .title(format!("🏗️ {} Team Buildings", team_id.1))
-        .description(format!(
-            "Building infrastructure for team **{}**",
-            team_id.1
-        ))
-        .footer(serenity::builder::CreateEmbedFooter::new(format!(
-            "Team ID: {:?}",
-            team_id.0
-        )))
-        .timestamp(serenity::model::Timestamp::now());
-
-    // Group buildings by type
-    let mut building_list = String::new();
-
-    // Find the longest building name for padding
-    let max_name_length = buildings
-        .iter()
-        .map(|b| {
-            town_config
-                .buildings
-                .get(&b.building_name.to_lowercase())
-                .map(|config| config.name.len())
-                .unwrap_or(b.building_name.len())
-        })
-        .max()
-        .unwrap_or(0);
-
-    // Add each building to the table
-    for building in &buildings {
-        let building_key = building.building_name.to_lowercase();
-        let building_config = town_config.buildings.get(&building_key);
-
-        // Get display name and icon
-        let (display_name, icon) = match building_config {
-            Some(config) => (config.name.clone(), config.icon.clone()),
-            None => (building.building_name.clone(), String::new()),
-        };
-
-        // Get max level
-        let max_level = building_config.map(|c| c.max_level).unwrap_or(9);
-        let level_display = if building.level as u32 >= max_level {
-            format!("**MAX** ({})", building.level)
-        } else {
-            format!("{}/{}", building.level, max_level)
-        };
-
-        // Format the building entry
-        building_list.push_str(&format!(
-            "{} `{:<width$}` : Level **{}**\n",
-            if icon.is_empty() { "🏢" } else { &icon },
-            display_name,
-            level_display,
-            width = max_name_length
-        ));
-    }
-
-    // Add the buildings as a field
-    embed = embed.field("Buildings", building_list, false);
-
-    // Add town hall level summary
-    let townhall = buildings
-        .iter()
-        .find(|b| b.building_name.to_lowercase() == "townhall");
-
-    if let Some(th) = townhall {
-        let th_config = town_config.buildings.get("townhall");
-        let unlocked_level = th.level + 1;
-
-        let summary = match th_config {
-            Some(config) => {
-                format!(
-                    "**Town Hall Level**: {}/{}\n**Max Building Level**: {}",
-                    th.level, config.max_level, unlocked_level,
-                )
-            }
-            None => format!("**Town Hall Level**: {}", th.level),
-        };
-
-        embed = embed.field("Town Summary", summary, false);
-    }
 
     // Create the message builder with the embed
     let message_builder = serenity::builder::CreateMessage::new().embed(embed);
@@ -1123,6 +1006,28 @@ pub async fn create_buildings_embed(
             let channel_id = ctx.channel_id().get() as i64;
             let message_id = message.id.get() as i64;
             let variant = "buildings".to_string();
+
+            // Check if the team exists and get its ID
+            let team = sqlx::query!(
+                r#"
+        SELECT id as "id: Option<i32>", name FROM teams WHERE name = $1
+        "#,
+                team_name
+            )
+            .fetch_optional(pool)
+            .await?;
+
+            // If the team doesn't exist, inform the user and return early
+            let team_id = match team {
+                Some(team) => (
+                    team.id.ok_or_else(|| Error::from("Team ID is null"))?,
+                    team.name,
+                ),
+                None => {
+                    println!("no team found with name '{}'", team_name);
+                    return Ok(());
+                }
+            };
 
             // Check if this team already has an embed of this variant
             let existing = sqlx::query!(
