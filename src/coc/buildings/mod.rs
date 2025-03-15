@@ -39,7 +39,7 @@ impl TownConfig {
         let content = fs::read_to_string(path)?;
 
         // Parse the TOML content
-        let mut config: TownConfigRaw = toml::from_str(&content)?;
+        let config: TownConfigRaw = toml::from_str(&content)?;
 
         // Convert from raw format to our format
         let buildings = config.buildings;

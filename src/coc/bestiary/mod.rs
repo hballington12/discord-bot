@@ -50,13 +50,14 @@ impl Bestiary {
                                 bestiary
                                     .monster_levels
                                     .insert(clean_monster_name, combat_level);
-                            } else {
-                                // Optionally, you could log duplicates for debugging
-                                println!(
-                                    "Skipping duplicate monster entry: {}",
-                                    clean_monster_name
-                                );
                             }
+                            // else {
+                            //     // Optionally, you could log duplicates for debugging
+                            //     println!(
+                            //         "Skipping duplicate monster entry: {}",
+                            //         clean_monster_name
+                            //     );
+                            // }
                         }
                     }
                 }

@@ -115,3 +115,16 @@
         [8, "Legendary weapons +60% damage"],
         [9, "Legendary armor +60% defense, Special abilities unlocked"],
     ]
+
+    # # Combat level limits by Armory level
+    # combat_limits = [
+    #     [1, 50],
+    #     [2, 100],
+    #     [3, 125],
+    #     [4, 150],
+    #     [5, 175],
+    #     [6, 200],
+    #     [7, 300],
+    #     [8, 400],
+    #     [9, 9999],
+    # ]

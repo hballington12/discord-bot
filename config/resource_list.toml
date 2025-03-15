@@ -4,4 +4,5 @@ patterns = [
     ".*ore",
     ".*mmer",
     ".oins",
+    ".*",     # Matches everything
 ]

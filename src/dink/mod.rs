@@ -94,6 +94,7 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
     .fetch_optional(pool)
     .await;
 
+    // check tha the player belongs to a team in the database
     let team = match team_result {
         Ok(Some(team)) => team,
         Ok(None) => {
@@ -105,6 +106,53 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
             return Err(e.into());
         }
     };
+
+    // try retrieve the combat level of the source
+    // return early if no source is found
+    let source_level = data.bestiary.get_combat_level(&drop.source);
+    if source_level.is_none() {
+        println!("No combat level found for source '{}'", drop.source);
+        return Ok(());
+    }
+    let level = source_level.unwrap() as i32;
+
+    // try to retrieve the team's max combat level
+    // Retrieve the team's armory level and check if they have access to the source's combat level
+    let armory_result = sqlx::query!(
+        r#"
+        SELECT 
+            t.id AS "team_id: i32",
+            t.name AS team_name,
+            tb.level AS "armory_level: i32",
+            acm.max_combat_level AS "max_combat_level: i32",
+            $1 <= acm.max_combat_level AS "has_access: bool"
+        FROM teams t
+        JOIN team_buildings tb ON t.id = tb.team_id
+        JOIN armory_combat_mapping acm ON tb.level = acm.armory_level
+        WHERE 
+            tb.building_name = 'armory'
+            AND t.id = $2
+        "#,
+        level,
+        team.team_id
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    // Check if the team has access to this combat level
+    let has_access = match armory_result {
+        Some(record) => record.has_access.unwrap_or(false),
+        None => false,
+    };
+
+    if !has_access {
+        println!(
+            "Team '{}' doesn't have access to combat level {} monsters",
+            team.team_name,
+            source_level.unwrap()
+        );
+        return Ok(());
+    }
 
     println!(
         "Processing drop for user '{}' of team '{}'",
