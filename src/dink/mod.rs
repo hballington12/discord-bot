@@ -50,6 +50,7 @@ pub async fn handle_message(
     println!("Received message with {} embed(s)", embed_count);
 
     for embed in &new_message.embeds {
+        println!("loot embed: {:?}", embed);
         let description = match &embed.description {
             Some(desc) => desc,
             None => continue,

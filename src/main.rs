@@ -22,6 +22,7 @@ pub struct Data {
     database: sqlx::SqlitePool,
     res_patterns: coc::patterns::PatternConfig,
     town_config: coc::buildings::TownConfig,
+    bestiary: coc::bestiary::Bestiary,
     status_message: tokio::sync::Mutex<Option<(serenity::ChannelId, serenity::MessageId)>>,
 } // User data, which is stored and accessible in all command invocations
 
@@ -158,11 +159,15 @@ async fn main() {
                 let town_config =
                     coc::buildings::init_buildings().expect("could not load town config");
 
+                // load bestiary
+                let bestiary = coc::bestiary::init_bestiary().expect("could not load bestiary");
+
                 Ok(Data {
                     dink_channel_id,
                     database: pool,
-                    res_patterns: res_patterns,
+                    res_patterns,
                     town_config,
+                    bestiary,
                     status_message: tokio::sync::Mutex::new(None),
                 })
             })

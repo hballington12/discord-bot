@@ -5,6 +5,7 @@ use poise::serenity_prelude as serenity;
 use serenity::builder::{CreateAttachment, CreateEmbed, CreateEmbedFooter, CreateMessage};
 use serenity::model::Timestamp;
 
+pub mod bestiary;
 pub mod buildings;
 pub mod commands;
 pub mod patterns;
