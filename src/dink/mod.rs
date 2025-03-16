@@ -60,6 +60,8 @@ pub async fn handle_message(
             None => continue,
         };
 
+        // println!("dink embed description is: '{}'", description);
+
         let drop = parse_loot_text(description)?;
 
         println!(

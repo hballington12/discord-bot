@@ -654,6 +654,136 @@ pub async fn upgrade_building(
     Ok(())
 }
 
+/// Downgrades a building for a team
+#[poise::command(slash_command, prefix_command, guild_only)]
+pub async fn downgrade_building(
+    ctx: Context<'_>,
+    #[description = "Name of the team"] team_name: String,
+    #[description = "Name of the building to downgrade"] building_name: String,
+) -> Result<(), Error> {
+    // Get database connection and configs from context data
+    let pool = &ctx.data().database;
+    let town_config = &ctx.data().town_config;
+
+    // Convert inputs to lowercase for consistent lookups
+    let team_name = team_name.to_lowercase();
+    let building_name = building_name.to_lowercase();
+
+    // Step 1: Check if the team exists
+    let team = sqlx::query!(
+        r#"
+        SELECT id as "id: Option<i32>" FROM teams WHERE name = $1
+        "#,
+        team_name
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    let team_id = match team {
+        Some(team) => team.id.ok_or_else(|| Error::from("Team ID is null"))?,
+        None => {
+            ctx.say(format!("No team found with name '{}'", team_name))
+                .await?;
+            return Ok(());
+        }
+    };
+
+    // Step 2: Check if the building exists in the configuration
+    if !town_config.assets.contains_key(&building_name) {
+        ctx.say(format!(
+            "Building '{}' does not exist in the configuration. Available buildings: {}",
+            building_name,
+            town_config.get_building_types().join(", ")
+        ))
+        .await?;
+        return Ok(());
+    }
+
+    // Step 3: Check if the team has this building and get its current level
+    let building = sqlx::query!(
+        r#"
+        SELECT id as "id: Option<i32>", level FROM team_buildings 
+        WHERE team_id = $1 AND building_name = $2
+        "#,
+        team_id,
+        building_name
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    let (building_id, current_level) = match building {
+        Some(building) => (
+            building
+                .id
+                .ok_or_else(|| Error::from("Building ID is null"))?,
+            building.level,
+        ),
+        None => {
+            ctx.say(format!(
+                "Team '{}' doesn't have a '{}' building. Please check the building name.",
+                team_name, building_name
+            ))
+            .await?;
+            return Ok(());
+        }
+    };
+
+    // Step 4: Check if building is at starting level or not built
+    let building_config = &town_config.assets[&building_name];
+    if current_level <= building_config.starting_level as i64 {
+        ctx.say(format!(
+            "Building '{}' is already at its starting level ({}) and cannot be downgraded further!",
+            building_name, current_level
+        ))
+        .await?;
+        return Ok(());
+    }
+
+    // Step 5: Calculate the target level
+    let target_level = current_level - 1;
+
+    // Step 6: Downgrade the building
+    sqlx::query!(
+        r#"
+        UPDATE team_buildings
+        SET level = level - 1
+        WHERE id = $1
+        "#,
+        building_id
+    )
+    .execute(pool)
+    .await?;
+
+    // Step 7: Send success message
+    let building_display_name = building_config.name.clone();
+    let icon = if !building_config.icon.is_empty() {
+        format!("{} ", building_config.icon)
+    } else {
+        String::new()
+    };
+
+    ctx.say(format!(
+        "{}**{}** downgraded to level **{}** for team **{}**!",
+        icon, building_display_name, target_level, team_name
+    ))
+    .await?;
+
+    // Step 8: Update any team embeds
+    if let Ok((count, _)) =
+        update_team_embeds(&ctx.serenity_context(), &ctx.data(), &team_name).await
+    {
+        if count > 0 {
+            ctx.say(format!(
+                "Updated {} team embeds with the new information.",
+                count
+            ))
+            .await?;
+        }
+    }
+
+    Ok(())
+}
+
 /// Creates an embed message showing team buildings and their levels
 #[poise::command(slash_command, prefix_command)]
 pub async fn create_buildings_embed(

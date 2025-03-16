@@ -232,13 +232,13 @@
         [1, "bones", 1],
         # Level 2
         [2, "bones", 2],
-        [2, "herbs", 10],
+        [2, "grimy guam", 2],
         # Level 3
         [3, "bones", 5],
-        [3, "herbs", 50],
+        [3, "grimy marrentil", 5],
         # Level 4
         [4, "coins", 5],
-        [4, "herbs", 150],
+        [4, "ur mom", 150],
         # Level 5
         [5, "coins", 10],
         [5, "herbs", 300],
@@ -400,7 +400,7 @@
         [1, "bones", 1],
         # Level 2
         [2, "bones", 2],
-        [2, "runes", 10],
+        [2, "body rune", 10],
         # Level 3
         [3, "bones", 5],
         [3, "runes", 50],
@@ -439,6 +439,7 @@
 
     # Upgrade requirements for Slayer Master by level
     upgrade_costs = [
+        [1, "uncut emerald", 1],
         # Level 2
         [2, "bones", 1],
         # Level 3

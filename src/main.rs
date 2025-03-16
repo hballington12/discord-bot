@@ -84,6 +84,7 @@ async fn main() {
             coc::commands::list_team_resources(),
             coc::commands::upgrade_building(),
             coc::commands::create_buildings_embed(),
+            coc::commands::downgrade_building(),
             commands::simple_embed(),
             commands::edit_embed(),
         ],
