@@ -6,7 +6,7 @@ CREATE TABLE team_buildings (
     id SERIAL PRIMARY KEY,
     team_id INTEGER NOT NULL,
     building_name VARCHAR(100) NOT NULL,
-    level INTEGER NOT NULL DEFAULT 1,
+    level INTEGER NOT NULL,
     last_upgraded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     -- Ensure unique combinations of team and building

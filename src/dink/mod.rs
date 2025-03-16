@@ -3,8 +3,8 @@ use poise::serenity_prelude as serenity;
 use crate::coc;
 use crate::coc::commands::update_team_embeds;
 use crate::coc::database::{
-    get_existing_resource, get_team_armory_level, get_user_team, insert_new_resource,
-    update_resource_quantity,
+    get_existing_resource, get_team_armory_level, get_team_slayer_level, get_user_team,
+    insert_new_resource, update_resource_quantity,
 };
 use crate::{Context, Data, Error};
 
@@ -50,22 +50,23 @@ pub async fn handle_message(
     data: &Data,
     new_message: &serenity::Message,
 ) -> Result<(), Error> {
-    let embed_count = new_message.embeds.len();
-    println!("Received message with {} embed(s)", embed_count);
+    // let embed_count = new_message.embeds.len();
+    // println!("Received message with {} embed(s)", embed_count);
 
     for embed in &new_message.embeds {
-        println!("loot embed: {:?}", embed);
+        // println!("loot embed: {:?}", embed);
         let description = match &embed.description {
             Some(desc) => desc,
             None => continue,
         };
 
         let drop = parse_loot_text(description)?;
-        println!("User: {}", drop.user);
-        println!("Source: {}", drop.source);
-        println!("Items: {:?}", drop.loots);
 
-        println!("processing drop...");
+        println!(
+            "Processing drop: User: {}, Source: {}, Items: {:?}",
+            drop.user, drop.source, drop.loots
+        );
+
         process_drop(ctx, data, drop).await?;
     }
 
@@ -80,7 +81,6 @@ pub async fn handle_message(
 /// team.
 async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> Result<(), Error> {
     let pool = &data.database;
-    println!("inside process drop.");
 
     // Convert username to lowercase for consistent database access
     let username = drop.user.to_lowercase();
@@ -97,84 +97,99 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
             return Err(e.into());
         }
     };
-
-    // try retrieve the combat level of the source
-    // return early if no source is found
-    let source_level = data.bestiary.get_combat_level(&drop.source);
-    if source_level.is_none() {
-        println!("No combat level found for source '{}'", drop.source);
-        return Ok(());
-    }
-    let level = source_level.unwrap() as i32;
-
-    // Retrieve the team's armory level and check if they have access to the source's combat level
-    let has_access = match get_team_armory_level(pool, level, team.0).await {
-        Ok(Some(access)) => access,
-        Ok(None) => false,
-        Err(e) => {
-            println!("Database error when checking team armory level: {}", e);
-            return Err(e.into());
+    // Check if the source has a valid combat level
+    let source_combat_level = match data.bestiary.get_combat_level(&drop.source) {
+        Some(level) => level as i32,
+        None => {
+            println!("No combat level found for source '{}'", drop.source);
+            return Ok(());
         }
     };
 
-    if !has_access {
-        println!(
-            "Team '{}' doesn't have access to combat level {} monsters",
-            team.1,
-            source_level.unwrap()
-        );
-        return Ok(());
+    //// TEMPORARY DISABLE
+    // // Check if team has access to monsters of this combat level
+    // if !get_team_armory_level(pool, source_combat_level, team.0)
+    //     .await?
+    //     .unwrap_or(false)
+    // {
+    //     println!(
+    //         "Team '{}' doesn't have access to combat level {} monsters",
+    //         team.1, source_combat_level
+    //     );
+    //     return Ok(());
+    // }
+
+    match data.bestiary.get_slayer_level(&drop.source) {
+        Some(level) => {
+            println!("Slayer level for source '{}': {}", drop.source, level);
+
+            // Check if team has necessary slayer level
+            if !get_team_slayer_level(pool, level as i32, team.0)
+                .await?
+                .unwrap_or(false)
+            {
+                println!(
+                    "Team '{}' doesn't have access to slayer level {} monsters",
+                    team.1, level
+                );
+                return Ok(());
+            }
+        }
+        None => {}
     }
-
-    //
-
-    println!(
-        "Processing drop for user '{}' of team '{}'",
-        drop.user, team.1
-    );
 
     // Process each item in the drop
     for (item_name, quantity) in drop.loots {
         let quantity = quantity as i64;
         let item_name = item_name.to_lowercase();
 
-        println!("querying if item: {} matches pattern...", item_name);
+        // Check if item matches resource pattern
+        let result =
+            coc::patterns::matches_pattern(&item_name, &data.res_patterns.resource_pattern);
 
-        // Instead, use match pattern function
-        let result = coc::patterns::matches_pattern(&item_name, &data.res_patterns.patterns);
+        // Skip this item if it doesn't match any resource pattern
+        if !result {
+            continue;
+        }
 
-        if result {
-            println!("Found noteworthy item: {}", item_name);
+        // get the category for the item
+        let category =
+            coc::patterns::get_resource_category(&item_name, &data.res_patterns.resource_pattern);
 
-            // Check if this resource already exists for the team
-            let existing_resource = get_existing_resource(pool, team.0, &item_name).await?;
+        println!("Item match found with category: {}", category);
+        // get the modified resource amount
+        let quantity =
+            coc::database::calculate_resource_total(pool, quantity as i32, team.0, &category)
+                .await?;
 
-            match existing_resource {
-                Some(resource) => {
-                    // Update quantity of existing resource
-                    let new_quantity = resource + quantity;
-                    update_resource_quantity(pool, team.0, &item_name, new_quantity).await?;
+        // Check if this resource already exists for the team
+        let existing_resource = get_existing_resource(pool, team.0, &item_name).await?;
 
-                    println!(
-                        "Updated resource quantity for team '{}': {} x {} (new total: {})",
-                        team.1, item_name, quantity, new_quantity
-                    );
-                }
-                None => {
-                    // Insert new resource entry
-                    insert_new_resource(pool, team.0, &item_name, quantity).await?;
+        match existing_resource {
+            Some(resource) => {
+                // Update quantity of existing resource
+                let new_quantity = resource + quantity as i64;
+                update_resource_quantity(pool, team.0, &item_name, new_quantity).await?;
 
-                    println!(
-                        "Added new resource for team '{}': {} x {}",
-                        team.1, item_name, quantity
-                    );
-                }
+                // println!(
+                //     "Updated resource quantity for team '{}': {} x {} (new total: {})",
+                //     team.1, item_name, quantity, new_quantity
+                // );
             }
+            None => {
+                // Insert new resource entry
+                insert_new_resource(pool, team.0, &item_name, quantity as i64).await?;
 
-            // also update any embed resource messages
-            let _ = update_team_embeds(ctx, data, &team.1).await;
+                // println!(
+                //     "Added new resource for team '{}': {} x {}",
+                //     team.1, item_name, quantity
+                // );
+            }
         }
     }
+
+    // also update any embed resource messages
+    let _ = update_team_embeds(ctx, data, &team.1).await?;
 
     Ok(())
 }

@@ -8,7 +8,6 @@ use std::path::Path;
 pub struct BuildingConfig {
     pub name: String,
     pub description: String,
-    #[serde(default = "default_starting_level")]
     pub starting_level: u32,
     pub max_level: u32,
     #[serde(default)]
@@ -27,10 +26,10 @@ pub struct TownConfig {
     pub resources: HashMap<String, Vec<String>>,
 }
 
-// Helper function for default starting level
-fn default_starting_level() -> u32 {
-    1
-}
+// // Helper function for default starting level
+// fn default_starting_level() -> u32 {
+//     1
+// }
 
 impl TownConfig {
     /// Load building configuration from TOML file

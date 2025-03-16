@@ -1,8 +1,35 @@
-patterns = [
-    "bones",
-    "coal",
-    ".*ore",
-    ".*mmer",
-    ".oins",
-    ".*",     # Matches everything
-]
+[[resource_pattern]]
+    pattern = "bones"
+    category = "bone"
+
+[[resource_pattern]]
+    pattern = "coal"
+    category = "mining"
+
+[[resource_pattern]]
+    pattern = ".* ore"
+    category = "mining"
+
+[[resource_pattern]]
+    pattern = "clay"
+    category = "mining"
+
+[[resource_pattern]]
+    pattern = ".* seed"
+    category = "farming"
+
+[[resource_pattern]]
+    pattern = "coins"
+    category = "currency"
+
+[[resource_pattern]]
+    pattern = " rune"
+    category = "rune"
+
+[[resource_pattern]]
+    pattern = "(uncut )?(sapphire|emerald|ruby|diamond|dragonstone|onyx)"
+    category = "crafting"
+
+[[resource_pattern]]
+    pattern = ".*"
+    category = "misc"

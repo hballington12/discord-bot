@@ -54,47 +54,405 @@
 [assets.armory]
     name = "Armory"
     description = "Allows crafting and upgrading of weapons and armor. Higher levels unlock better equipment."
-    starting_level = 1
+    starting_level = 0
     max_level = 9
     icon = "⚔️"
 
     # Upgrade requirements for Armory by level
     upgrade_costs = [
+        [1, "bones", 1],
         # Level 2
         [2, "bones", 1],
         # Level 3
-        [3, "wood", 150],
-        [3, "iron", 75],
-        [3, "leather", 30],
+        [3, "bones", 1],
         # Level 4
-        [4, "wood", 300],
-        [4, "iron", 200],
-        [4, "leather", 75],
+        [4, "coins", 1],
         # Level 5
-        [5, "wood", 600],
-        [5, "iron", 400],
-        [5, "leather", 150],
-        [5, "crystal", 5],
+        [5, "coins", 5],
         # Level 6
-        [6, "wood", 1200],
-        [6, "iron", 800],
-        [6, "leather", 300],
-        [6, "crystal", 15],
+        [6, "coins", 10],
         # Level 7
-        [7, "wood", 2400],
-        [7, "iron", 1600],
-        [7, "leather", 600],
-        [7, "crystal", 40],
+        [7, "coins", 20],
         # Level 8
-        [8, "wood", 4800],
-        [8, "iron", 3200],
-        [8, "leather", 1200],
-        [8, "crystal", 80],
-        [8, "ancient_metal", 1],
+        [8, "coins", 40],
         # Level 9
-        [9, "wood", 9600],
-        [9, "iron", 6400],
-        [9, "leather", 2400],
-        [9, "crystal", 160],
-        [9, "ancient_metal", 2],
+        [9, "coins", 80],
+    ]
+
+[assets.slayer_master]
+    name = "Slayer Master"
+    description = "Allows access to higher level slayer tasks and rewards."
+    starting_level = 1
+    max_level = 9
+    icon = "🗡️"
+
+    # Upgrade requirements for Slayer Master by level
+    upgrade_costs = [
+        # Level 2
+        [2, "bones", 1],
+        # Level 3
+        [3, "bones", 1],
+        # Level 4
+        [4, "coins", 1],
+        # Level 5
+        [5, "coins", 5],
+        # Level 6
+        [6, "coins", 10],
+        # Level 7
+        [7, "coins", 20],
+        # Level 8
+        [8, "coins", 40],
+        # Level 9
+        [9, "coins", 80],
+    ]
+
+# Treasury - For storing and managing team funds
+[assets.treasury]
+    name = "Treasury"
+    description = "Obtain a percentage of coins from your team's drops. Higher levels increase the percentage."
+    starting_level = 0
+    max_level = 9
+    icon = "💰"
+
+    # Upgrade requirements for Treasury by level
+    upgrade_costs = [
+        [1, "bones", 1],
+        # Level 2
+        [2, "bones", 1],
+        # Level 3
+        [3, "bones", 1],
+        # Level 4
+        [4, "coins", 1],
+        # Level 5
+        [5, "coins", 5],
+        # Level 6
+        [6, "coins", 10],
+        # Level 7
+        [7, "coins", 20],
+        # Level 8
+        [8, "coins", 40],
+        # Level 9
+        [9, "coins", 80],
+    ]
+
+# Prospector's Shop - For enhancing mining resources
+[assets.prospector_shop]
+    name = "Prospector's Shop"
+    description = "Improves mining yields and unlocks special ore processing methods. Higher levels yield more resources per mining action."
+    starting_level = 0
+    max_level = 9
+    icon = "⛏️"
+
+    # Upgrade requirements for Prospector's Shop by level
+    upgrade_costs = [
+        [1, "bones", 1],
+        # Level 2
+        [2, "bones", 2],
+        [2, "iron", 10],
+        # Level 3
+        [3, "bones", 5],
+        [3, "iron", 50],
+        # Level 4
+        [4, "coins", 5],
+        [4, "iron", 150],
+        # Level 5
+        [5, "coins", 10],
+        [5, "iron", 300],
+        # Level 6
+        [6, "coins", 20],
+        [6, "iron", 600],
+        [6, "crystal", 5],
+        # Level 7
+        [7, "coins", 40],
+        [7, "iron", 1200],
+        [7, "crystal", 15],
+        # Level 8
+        [8, "coins", 80],
+        [8, "iron", 2400],
+        [8, "crystal", 30],
+        # Level 9
+        [9, "coins", 160],
+        [9, "iron", 4800],
+        [9, "crystal", 60],
+        [9, "ancient_core", 1],
+    ]
+
+# Fishmonger's Shop - For enhancing fishing resources
+[assets.fishmonger_shop]
+    name = "Fishmonger's Shop"
+    description = "Increases fishing efficiency and provides access to rare fishing spots. Higher levels unlock better fish preservation methods."
+    starting_level = 0
+    max_level = 9
+    icon = "🎣"
+
+    # Upgrade requirements for Fishmonger's Shop by level
+    upgrade_costs = [
+        [1, "bones", 1],
+        # Level 2
+        [2, "bones", 2],
+        [2, "raw_fish", 10],
+        # Level 3
+        [3, "bones", 5],
+        [3, "raw_fish", 50],
+        # Level 4
+        [4, "coins", 5],
+        [4, "raw_fish", 150],
+        # Level 5
+        [5, "coins", 10],
+        [5, "raw_fish", 300],
+        # Level 6
+        [6, "coins", 20],
+        [6, "raw_fish", 600],
+        [6, "crystal", 5],
+        # Level 7
+        [7, "coins", 40],
+        [7, "raw_fish", 1200],
+        [7, "crystal", 15],
+        # Level 8
+        [8, "coins", 80],
+        [8, "raw_fish", 2400],
+        [8, "crystal", 30],
+        # Level 9
+        [9, "coins", 160],
+        [9, "raw_fish", 4800],
+        [9, "crystal", 60],
+        [9, "ancient_core", 1],
+    ]
+
+# Herbalist's Hut - For enhancing herblore resources
+[assets.herbalist_hut]
+    name = "Herbalist's Hut"
+    description = "Multiplies herb drops"
+    starting_level = 0
+    max_level = 9
+    icon = "🌿"
+
+    # Upgrade requirements for Herbalist's Hut by level
+    upgrade_costs = [
+        [1, "bones", 1],
+        # Level 2
+        [2, "bones", 2],
+        [2, "herbs", 10],
+        # Level 3
+        [3, "bones", 5],
+        [3, "herbs", 50],
+        # Level 4
+        [4, "coins", 5],
+        [4, "herbs", 150],
+        # Level 5
+        [5, "coins", 10],
+        [5, "herbs", 300],
+        # Level 6
+        [6, "coins", 20],
+        [6, "herbs", 600],
+        [6, "crystal", 5],
+        # Level 7
+        [7, "coins", 40],
+        [7, "herbs", 1200],
+        [7, "crystal", 15],
+        # Level 8
+        [8, "coins", 80],
+        [8, "herbs", 2400],
+        [8, "crystal", 30],
+        # Level 9
+        [9, "coins", 160],
+        [9, "herbs", 4800],
+        [9, "crystal", 60],
+        [9, "ancient_core", 1],
+    ]
+
+# Woodcutter's Lodge - For enhancing woodcutting resources
+[assets.woodcutter_lodge]
+    name = "Woodcutter's Lodge"
+    description = "Improves woodcutting efficiency and wood processing. Higher levels provide access to rare trees and lumber."
+    starting_level = 0
+    max_level = 9
+    icon = "🪓"
+
+    # Upgrade requirements for Woodcutter's Lodge by level
+    upgrade_costs = [
+        [1, "bones", 1],
+        # Level 2
+        [2, "bones", 2],
+        [2, "wood", 10],
+        # Level 3
+        [3, "bones", 5],
+        [3, "wood", 50],
+        # Level 4
+        [4, "coins", 5],
+        [4, "wood", 150],
+        # Level 5
+        [5, "coins", 10],
+        [5, "wood", 300],
+        # Level 6
+        [6, "coins", 20],
+        [6, "wood", 600],
+        [6, "crystal", 5],
+        # Level 7
+        [7, "coins", 40],
+        [7, "wood", 1200],
+        [7, "crystal", 15],
+        # Level 8
+        [8, "coins", 80],
+        [8, "wood", 2400],
+        [8, "crystal", 30],
+        # Level 9
+        [9, "coins", 160],
+        [9, "wood", 4800],
+        [9, "crystal", 60],
+        [9, "ancient_core", 1],
+    ]
+
+# Farming Guild - For enhancing farming resources
+[assets.farming_guild]
+    name = "Farming Guild"
+    description = "Multiplies seed drops"
+    starting_level = 0
+    max_level = 9
+    icon = "🌱"
+
+    # Upgrade requirements for Farming Guild by level
+    upgrade_costs = [
+        [1, "bones", 1],
+        # Level 2
+        [2, "bones", 2],
+        [2, "seeds", 10],
+        # Level 3
+        [3, "bones", 5],
+        [3, "seeds", 50],
+        # Level 4
+        [4, "coins", 5],
+        [4, "seeds", 150],
+        # Level 5
+        [5, "coins", 10],
+        [5, "seeds", 300],
+        # Level 6
+        [6, "coins", 20],
+        [6, "seeds", 600],
+        [6, "crystal", 5],
+        # Level 7
+        [7, "coins", 40],
+        [7, "seeds", 1200],
+        [7, "crystal", 15],
+        # Level 8
+        [8, "coins", 80],
+        [8, "seeds", 2400],
+        [8, "crystal", 30],
+        # Level 9
+        [9, "coins", 160],
+        [9, "seeds", 4800],
+        [9, "crystal", 60],
+        [9, "ancient_core", 1],
+    ]
+
+# Hunter's Lodge - For enhancing hunting resources
+[assets.hunters_lodge]
+    name = "Hunter's Lodge"
+    description = "Improves trapping efficiency and animal processing. Higher levels unlock rare animal parts and better hunting grounds."
+    starting_level = 0
+    max_level = 9
+    icon = "🏹"
+
+    # Upgrade requirements for Hunter's Lodge by level
+    upgrade_costs = [
+        [1, "bones", 1],
+        # Level 2
+        [2, "bones", 2],
+        [2, "hides", 10],
+        # Level 3
+        [3, "bones", 5],
+        [3, "hides", 50],
+        # Level 4
+        [4, "coins", 5],
+        [4, "hides", 150],
+        # Level 5
+        [5, "coins", 10],
+        [5, "hides", 300],
+        # Level 6
+        [6, "coins", 20],
+        [6, "hides", 600],
+        [6, "crystal", 5],
+        # Level 7
+        [7, "coins", 40],
+        [7, "hides", 1200],
+        [7, "crystal", 15],
+        # Level 8
+        [8, "coins", 80],
+        [8, "hides", 2400],
+        [8, "crystal", 30],
+        # Level 9
+        [9, "coins", 160],
+        [9, "hides", 4800],
+        [9, "crystal", 60],
+        [9, "ancient_core", 1],
+    ]
+
+# Magic Workshop - For enhancing runecrafting and enchanting
+[assets.rune_shop]
+    name = "Rune Shop"
+    description = "Multiplies rune resources."
+    starting_level = 0
+    max_level = 9
+    icon = "✨"
+
+    # Upgrade requirements for Magic Workshop by level
+    upgrade_costs = [
+        [1, "bones", 1],
+        # Level 2
+        [2, "bones", 2],
+        [2, "runes", 10],
+        # Level 3
+        [3, "bones", 5],
+        [3, "runes", 50],
+        # Level 4
+        [4, "coins", 5],
+        [4, "runes", 150],
+        # Level 5
+        [5, "coins", 10],
+        [5, "runes", 300],
+        # Level 6
+        [6, "coins", 20],
+        [6, "runes", 600],
+        [6, "crystal", 5],
+        # Level 7
+        [7, "coins", 40],
+        [7, "runes", 1200],
+        [7, "crystal", 15],
+        # Level 8
+        [8, "coins", 80],
+        [8, "runes", 2400],
+        [8, "crystal", 30],
+        # Level 9
+        [9, "coins", 160],
+        [9, "runes", 4800],
+        [9, "crystal", 60],
+        [9, "ancient_core", 1],
+    ]
+
+# Crafting Guild - For enhancing crafting resources
+[assets.crafting_guild]
+    name = "Crafting Guild"
+    description = "Specializes in crafting various items from textiles, gems, and leather. Higher levels unlock complex patterns and rare materials."
+    starting_level = 0
+    max_level = 9
+    icon = "🧵"
+
+    # Upgrade requirements for Slayer Master by level
+    upgrade_costs = [
+        # Level 2
+        [2, "bones", 1],
+        # Level 3
+        [3, "bones", 1],
+        # Level 4
+        [4, "coins", 1],
+        # Level 5
+        [5, "coins", 5],
+        # Level 6
+        [6, "coins", 10],
+        # Level 7
+        [7, "coins", 20],
+        # Level 8
+        [8, "coins", 40],
+        # Level 9
+        [9, "coins", 80],
     ]

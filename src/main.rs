@@ -56,7 +56,6 @@ async fn event_handler(
         serenity::FullEvent::Message { new_message } => {
             // Use the stored channel ID
             if new_message.channel_id.get() == data.dink_channel_id {
-                println!("responding to message in dink channel");
                 if let Err(e) = dink::handle_message(ctx, data, new_message).await {
                     println!("Error handling dink message: {}", e);
                 }

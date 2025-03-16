@@ -4,6 +4,8 @@ use crate::{Context, Data, Error};
 use ::serenity::all::CreateEmbed;
 use poise::serenity_prelude as serenity;
 
+mod embed;
+
 /// Lists all teams in the database
 #[poise::command(slash_command, prefix_command, guild_only)]
 pub async fn list_teams(ctx: Context<'_>) -> Result<(), Error> {
@@ -69,12 +71,24 @@ pub async fn add_team(
     // Insert a new set of buildings into the database
     let town_config = &ctx.data().town_config;
 
+    // print the starting level of the buildings
+    for (building, config) in &town_config.assets {
+        println!("{}: {}", building, config.starting_level);
+    }
+
     // Get the next available building ID
     let mut building_id = crate::coc::database::get_max_building_id(pool).await? + 1;
 
     // Loop through the buildings and insert them into the database
-    for (building, _) in &town_config.assets {
-        crate::coc::database::insert_team_building(pool, building_id, next_id, building, 1).await?;
+    for (building, config) in &town_config.assets {
+        crate::coc::database::insert_team_building(
+            pool,
+            building_id,
+            next_id,
+            &building,
+            config.starting_level as i32,
+        )
+        .await?;
         building_id += 1;
     }
 
@@ -334,6 +348,8 @@ pub async fn update_team_embeds(
     data: &Data,
     team_name: &str,
 ) -> Result<(usize, Vec<String>), Error> {
+    println!("Updating team embeds for team '{}'", team_name);
+
     // Get database connection from context data
     let pool = &data.database;
 
@@ -367,7 +383,7 @@ pub async fn update_team_embeds(
         let embed = match variant.as_str() {
             "buildings" => {
                 // For buildings variant, use the buildings embed
-                match get_buildings_embed(data, &team_name).await? {
+                match embed::get_buildings_embed(data, &team_name).await? {
                     Some(buildings_embed) => buildings_embed,
                     None => {
                         results.push(format!(
@@ -427,116 +443,6 @@ pub async fn update_team_embeds(
     }
 
     Ok((updated_count, results))
-}
-
-async fn get_buildings_embed(data: &Data, team_name: &str) -> Result<Option<CreateEmbed>, Error> {
-    // Convert team name to lowercase for consistent lookups
-    let team_name = team_name.to_lowercase();
-    let town_config = &data.town_config;
-    let pool = &data.database;
-
-    // Check if the team exists and get its ID
-    let team = sqlx::query!(
-        r#"
-        SELECT id as "id: Option<i32>", name FROM teams WHERE name = $1
-        "#,
-        team_name
-    )
-    .fetch_optional(pool)
-    .await?;
-
-    // If the team doesn't exist, inform the user and return early
-    let team_id = match team {
-        Some(team) => (
-            team.id.ok_or_else(|| Error::from("Team ID is null"))?,
-            team.name,
-        ),
-        None => {
-            println!("no team found with name '{}'", team_name);
-            return Ok(None);
-        }
-    };
-
-    // Query buildings for this team
-    let buildings = sqlx::query!(
-        r#"
-        SELECT id as "id: Option<i32>", building_name, level
-        FROM team_buildings
-        WHERE team_id = $1
-        ORDER BY building_name ASC
-        "#,
-        team_id.0
-    )
-    .fetch_all(pool)
-    .await?;
-
-    if buildings.is_empty() {
-        println!("no buildings found for team '{}'", team_id.1);
-        return Ok(None);
-    }
-
-    // Create the embed
-    let mut embed = serenity::builder::CreateEmbed::new()
-        .title(format!("🏗️ {} Team Buildings", team_id.1))
-        .description(format!(
-            "Building infrastructure for team **{}**",
-            team_id.1
-        ))
-        .footer(serenity::builder::CreateEmbedFooter::new(format!(
-            "Team ID: {:?}",
-            team_id.0
-        )))
-        .timestamp(serenity::model::Timestamp::now());
-
-    // Group buildings by type
-    let mut building_list = String::new();
-
-    // Find the longest building name for padding
-    let max_name_length = buildings
-        .iter()
-        .map(|b| {
-            town_config
-                .assets
-                .get(&b.building_name.to_lowercase())
-                .map(|config| config.name.len())
-                .unwrap_or(b.building_name.len())
-        })
-        .max()
-        .unwrap_or(0);
-
-    // Add each building to the table
-    for building in &buildings {
-        let building_key = building.building_name.to_lowercase();
-        let building_config = town_config.assets.get(&building_key);
-
-        // Get display name and icon
-        let (display_name, icon) = match building_config {
-            Some(config) => (config.name.clone(), config.icon.clone()),
-            None => (building.building_name.clone(), String::new()),
-        };
-
-        // Get max level
-        let max_level = building_config.map(|c| c.max_level).unwrap_or(9);
-        let level_display = if building.level as u32 >= max_level {
-            format!("**MAX** ({})", building.level)
-        } else {
-            format!("{}/{}", building.level, max_level)
-        };
-
-        // Format the building entry
-        building_list.push_str(&format!(
-            "{} `{:<width$}` : Level **{}**\n",
-            if icon.is_empty() { "🏢" } else { &icon },
-            display_name,
-            level_display,
-            width = max_name_length
-        ));
-    }
-
-    // Add the buildings as a field
-    embed = embed.field("Buildings", building_list, false);
-
-    Ok(Some(embed))
 }
 
 /// Upgrades a building for a team
@@ -761,7 +667,7 @@ pub async fn create_buildings_embed(
     // Convert team name to lowercase for consistent lookups
     let team_name = team_name.to_lowercase();
 
-    let embed = match get_buildings_embed(data, &team_name).await? {
+    let embed = match embed::get_buildings_embed(data, &team_name).await? {
         Some(embed) => embed,
         None => {
             ctx.say(format!("No buildings found for team '{}'", team_name))

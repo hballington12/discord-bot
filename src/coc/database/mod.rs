@@ -45,6 +45,37 @@ pub async fn get_team_armory_level(
     Ok(result.map(|record| record.has_access.unwrap_or(false)))
 }
 
+pub async fn get_team_slayer_level(
+    pool: &SqlitePool,
+    level: i32,
+    team_id: i32,
+) -> Result<Option<bool>, Error> {
+    println!(
+        "Checking slayer level access for team {} with level {}",
+        team_id, level
+    );
+    let result = sqlx::query!(
+        r#"
+        SELECT 
+            $1 <= smlm.slayer_level AS "has_access: bool"
+        FROM teams t
+        JOIN team_buildings tb ON t.id = tb.team_id
+        JOIN slayer_master_level_mapping smlm ON tb.level = smlm.slayer_master_level
+        WHERE 
+            tb.building_name = 'slayer_master'
+            AND t.id = $2
+        "#,
+        level,
+        team_id
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    println!("Result: {:?}", result);
+
+    Ok(result.map(|record| record.has_access.unwrap_or(false)))
+}
+
 pub async fn get_existing_resource(
     pool: &SqlitePool,
     team_id: i32,
@@ -419,4 +450,68 @@ pub async fn mark_embed_as_deleted(pool: &SqlitePool, embed_id: i32) -> Result<(
     .await?;
 
     Ok(())
+}
+
+/// Get a team's multiplier for a specific resource category
+pub async fn get_team_resource_multiplier(
+    pool: &SqlitePool,
+    team_id: i32,
+    resource_category: &str,
+) -> Result<f64, Error> {
+    let result = sqlx::query!(
+        r#"
+        SELECT COALESCE(MAX(multiplier), 1.0) as "multiplier: f64"
+        FROM team_resource_multipliers
+        WHERE team_id = ? AND resource_category = ?
+        "#,
+        team_id,
+        resource_category
+    )
+    .fetch_one(pool)
+    .await?;
+
+    Ok(result.multiplier)
+}
+
+/// Get a team's flat bonus for a specific resource category
+pub async fn get_team_resource_flat_bonus(
+    pool: &SqlitePool,
+    team_id: i32,
+    resource_category: &str,
+) -> Result<i32, Error> {
+    let result = sqlx::query!(
+        r#"
+        SELECT COALESCE(MAX(flat_bonus), 0) as "bonus: i32"
+        FROM team_resource_multipliers
+        WHERE team_id = ? AND resource_category = ?
+        "#,
+        team_id,
+        resource_category
+    )
+    .fetch_one(pool)
+    .await?;
+
+    Ok(result.bonus)
+}
+
+/// Calculate total resources after applying multiplier and bonus
+pub async fn calculate_resource_total(
+    pool: &SqlitePool,
+    base_amount: i32,
+    team_id: i32,
+    resource_category: &str,
+) -> Result<i32, Error> {
+    let multiplier = get_team_resource_multiplier(pool, team_id, resource_category).await?;
+    let flat_bonus = get_team_resource_flat_bonus(pool, team_id, resource_category).await?;
+
+    // Calculate total: round(base_amount * multiplier) + flat_bonus
+    let multiplied = (base_amount as f64 * multiplier).round() as i32;
+    let total = multiplied + flat_bonus;
+
+    println!(
+        "Calculated resource total: {} * {} + {} = {}",
+        base_amount, multiplier, flat_bonus, total
+    );
+
+    Ok(total)
 }
