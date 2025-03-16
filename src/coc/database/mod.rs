@@ -379,11 +379,22 @@ pub async fn insert_team_embed(
     variant: &str,
     message_id: i64,
 ) -> Result<(), Error> {
+    let max_id_result = sqlx::query!(
+        r#"
+        SELECT MAX(id) as "max_id: i32" FROM team_embeds
+        "#
+    )
+    .fetch_one(pool)
+    .await?;
+
+    let next_id = max_id_result.max_id.unwrap_or(0) + 1;
+
     sqlx::query!(
         r#"
-        INSERT INTO team_embeds (team_id, channel_id, variant, message_id)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO team_embeds (id, team_id, channel_id, variant, message_id)
+        VALUES ($1, $2, $3, $4, $5)
         "#,
+        next_id,
         team_id,
         channel_id,
         variant,

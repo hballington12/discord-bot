@@ -157,7 +157,7 @@ async fn main() {
 
                 // load town config
                 let town_config =
-                    coc::buildings::init_buildings().expect("could not load town config");
+                    coc::buildings::init_assets().expect("could not load town config");
 
                 // load bestiary
                 let bestiary = coc::bestiary::init_bestiary().expect("could not load bestiary");

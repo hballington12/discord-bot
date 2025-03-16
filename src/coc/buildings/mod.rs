@@ -22,7 +22,7 @@ pub struct BuildingConfig {
 /// All buildings configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TownConfig {
-    pub buildings: HashMap<String, BuildingConfig>,
+    pub assets: HashMap<String, BuildingConfig>,
     #[serde(default)]
     pub resources: HashMap<String, Vec<String>>,
 }
@@ -42,25 +42,22 @@ impl TownConfig {
         let config: TownConfigRaw = toml::from_str(&content)?;
 
         // Convert from raw format to our format
-        let buildings = config.buildings;
+        let assets = config.assets;
         let resources = config.resources.unwrap_or_default();
 
-        Ok(TownConfig {
-            buildings,
-            resources,
-        })
+        Ok(TownConfig { assets, resources })
     }
 
     /// Get all building types
     pub fn get_building_types(&self) -> Vec<String> {
-        self.buildings.keys().cloned().collect()
+        self.assets.keys().cloned().collect()
     }
 
     /// Get upgrade costs for a building at a specific level
     pub fn get_upgrade_costs(&self, building_type: &str, level: u32) -> HashMap<String, u32> {
         let mut costs = HashMap::new();
 
-        if let Some(building) = self.buildings.get(building_type) {
+        if let Some(building) = self.assets.get(building_type) {
             for cost_entry in &building.upgrade_costs {
                 if cost_entry.len() >= 3 {
                     // Extract level, resource name, and amount
@@ -84,13 +81,13 @@ impl TownConfig {
 // Raw structure to parse TOML directly
 #[derive(Debug, Deserialize)]
 struct TownConfigRaw {
-    buildings: HashMap<String, BuildingConfig>,
+    assets: HashMap<String, BuildingConfig>,
     resources: Option<HashMap<String, Vec<String>>>,
 }
 
 /// Initialize the building configuration
-pub fn init_buildings() -> Result<TownConfig, Box<dyn std::error::Error>> {
-    let config_path = "config/building_list.toml";
+pub fn init_assets() -> Result<TownConfig, Box<dyn std::error::Error>> {
+    let config_path = "config/asset_list.toml";
     TownConfig::load_from_file(config_path)
 }
 
@@ -100,7 +97,7 @@ mod tests {
 
     #[test]
     fn test_load_building_config() {
-        let result = init_buildings();
+        let result = init_assets();
         assert!(
             result.is_ok(),
             "Failed to load building config: {:?}",
@@ -109,10 +106,10 @@ mod tests {
 
         if let Ok(config) = result {
             // Check that we have town hall
-            assert!(config.buildings.contains_key("townhall"));
+            assert!(config.assets.contains_key("townhall"));
 
             // Check town hall properties
-            if let Some(townhall) = config.buildings.get("townhall") {
+            if let Some(townhall) = config.assets.get("townhall") {
                 assert_eq!(townhall.name, "Town Hall");
                 assert_eq!(townhall.max_level, 9);
             }

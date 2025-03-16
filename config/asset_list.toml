@@ -2,7 +2,7 @@
 # Each team starts with these buildings at level 1 (unless otherwise specified)
 
 # Town Hall - Main team building
-[buildings.townhall]
+[assets.townhall]
     name = "Town Hall"
     description = "The heart of your team's base. Upgrade to unlock more buildings and higher building levels."
     starting_level = 1
@@ -50,11 +50,8 @@
         [9, "ancient_core", 3],
     ]
 
-    # Benefits per level - what each level provides (none for town hall)
-    benefits = []
-
 # Armory - For weapon upgrades and team equipment
-[buildings.armory]
+[assets.armory]
     name = "Armory"
     description = "Allows crafting and upgrading of weapons and armor. Higher levels unlock better equipment."
     starting_level = 1
@@ -64,8 +61,7 @@
     # Upgrade requirements for Armory by level
     upgrade_costs = [
         # Level 2
-        [2, "wood", 75],
-        [2, "iron", 25],
+        [2, "bones", 1],
         # Level 3
         [3, "wood", 150],
         [3, "iron", 75],
@@ -102,29 +98,3 @@
         [9, "crystal", 160],
         [9, "ancient_metal", 2],
     ]
-
-    # Benefits per level - what each level provides
-    benefits = [
-        [1, "Basic weapons and armor"],
-        [2, "Improved weapons +10% damage"],
-        [3, "Improved armor +10% defense"],
-        [4, "Advanced weapons +25% damage"],
-        [5, "Advanced armor +25% defense"],
-        [6, "Elite weapons +40% damage"],
-        [7, "Elite armor +40% defense"],
-        [8, "Legendary weapons +60% damage"],
-        [9, "Legendary armor +60% defense, Special abilities unlocked"],
-    ]
-
-    # # Combat level limits by Armory level
-    # combat_limits = [
-    #     [1, 50],
-    #     [2, 100],
-    #     [3, 125],
-    #     [4, 150],
-    #     [5, 175],
-    #     [6, 200],
-    #     [7, 300],
-    #     [8, 400],
-    #     [9, 9999],
-    # ]

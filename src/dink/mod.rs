@@ -126,6 +126,8 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
         return Ok(());
     }
 
+    //
+
     println!(
         "Processing drop for user '{}' of team '{}'",
         drop.user, team.1

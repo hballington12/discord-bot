@@ -73,7 +73,7 @@ pub async fn add_team(
     let mut building_id = crate::coc::database::get_max_building_id(pool).await? + 1;
 
     // Loop through the buildings and insert them into the database
-    for (building, _) in &town_config.buildings {
+    for (building, _) in &town_config.assets {
         crate::coc::database::insert_team_building(pool, building_id, next_id, building, 1).await?;
         building_id += 1;
     }
@@ -496,7 +496,7 @@ async fn get_buildings_embed(data: &Data, team_name: &str) -> Result<Option<Crea
         .iter()
         .map(|b| {
             town_config
-                .buildings
+                .assets
                 .get(&b.building_name.to_lowercase())
                 .map(|config| config.name.len())
                 .unwrap_or(b.building_name.len())
@@ -507,7 +507,7 @@ async fn get_buildings_embed(data: &Data, team_name: &str) -> Result<Option<Crea
     // Add each building to the table
     for building in &buildings {
         let building_key = building.building_name.to_lowercase();
-        let building_config = town_config.buildings.get(&building_key);
+        let building_config = town_config.assets.get(&building_key);
 
         // Get display name and icon
         let (display_name, icon) = match building_config {
@@ -574,7 +574,7 @@ pub async fn upgrade_building(
     };
 
     // Step 2: Check if the building exists in the configuration
-    if !town_config.buildings.contains_key(&building_name) {
+    if !town_config.assets.contains_key(&building_name) {
         ctx.say(format!(
             "Building '{}' does not exist in the configuration. Available buildings: {}",
             building_name,
@@ -614,7 +614,7 @@ pub async fn upgrade_building(
     };
 
     // Step 4: Check if building is at max level
-    let building_config = &town_config.buildings[&building_name];
+    let building_config = &town_config.assets[&building_name];
     if current_level as u32 >= building_config.max_level {
         ctx.say(format!(
             "Building '{}' is already at its maximum level ({})!",
