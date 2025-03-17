@@ -606,7 +606,7 @@ pub async fn upgrade_building(
         return Ok(());
     }
 
-    // Step 6: Get upgrade costs
+    // Step 6: Get upgrade costs using the new enum-based system
     let target_level = current_level + 1;
     let costs = town_config.get_upgrade_costs(&building_name, target_level as u32);
 
@@ -627,28 +627,55 @@ pub async fn upgrade_building(
     let mut missing_resources = Vec::new();
     let mut required_resources = Vec::new();
 
-    for (resource_name, required_amount) in &costs {
-        // Get the current amount of this resource
-        let resource_query = sqlx::query!(
-            r#"
-            SELECT quantity FROM resources
-            WHERE team_id = $1 AND category = $2
-            "#,
-            team_id,
-            resource_name
-        )
-        .fetch_optional(pool)
-        .await?;
+    for cost in &costs {
+        match cost {
+            // Handle regular resource requirements
+            crate::coc::buildings::UpgradeCost::Resource(resource_name, required_amount) => {
+                // Get the current amount of this resource
+                let resource_query = sqlx::query!(
+                    r#"
+                    SELECT quantity FROM resources
+                    WHERE team_id = $1 AND name = $2
+                    "#,
+                    team_id,
+                    resource_name
+                )
+                .fetch_optional(pool)
+                .await?;
 
-        let current_amount = resource_query.map(|r| r.quantity).unwrap_or(0);
+                let current_amount = resource_query.map(|r| r.quantity).unwrap_or(0);
+                required_resources.push(format!("`{}`: {}", resource_name, required_amount));
 
-        required_resources.push(format!("`{}`: {}", resource_name, required_amount));
+                if current_amount < *required_amount as i64 {
+                    missing_resources.push(format!(
+                        "`{}`: have {}/{}",
+                        resource_name, current_amount, required_amount
+                    ));
+                }
+            }
 
-        if current_amount < *required_amount as i64 {
-            missing_resources.push(format!(
-                "`{}`: have {}/{}",
-                resource_name, current_amount, required_amount
-            ));
+            // Handle category-based requirements
+            crate::coc::buildings::UpgradeCost::Category(category_name, required_amount) => {
+                // Get the total amount of resources in this category
+                let total_quantity = crate::coc::database::get_resource_quantity_by_category(
+                    pool,
+                    team_id.expect("team id should not be null here"),
+                    category_name,
+                )
+                .await?;
+
+                required_resources.push(format!(
+                    "`{}` (category): {}",
+                    category_name, required_amount
+                ));
+
+                if total_quantity < *required_amount as i64 {
+                    missing_resources.push(format!(
+                        "`{}` (category): have {}/{} ",
+                        category_name, total_quantity, required_amount
+                    ));
+                }
+            }
         }
     }
 
@@ -672,23 +699,83 @@ pub async fn upgrade_building(
     // Step 9: Begin transaction to update resources and building level
     let mut tx = pool.begin().await?;
 
-    println!("Starting transaction. WARN: probably needs fixing");
+    println!("Starting transaction for resource deduction");
 
     // Deduct resources
-    for (resource_name, amount) in &costs {
-        let amount = *amount as i64;
-        sqlx::query!(
-            r#"
-            UPDATE resources
-            SET quantity = quantity - $1
-            WHERE team_id = $2 AND category = $3
-            "#,
-            amount,
-            team_id,
-            resource_name
-        )
-        .execute(&mut *tx)
-        .await?;
+    for cost in &costs {
+        match cost {
+            // Handle regular resource deduction
+            crate::coc::buildings::UpgradeCost::Resource(resource_name, amount) => {
+                let amount = *amount as i64;
+                sqlx::query!(
+                    r#"
+                    UPDATE resources
+                    SET quantity = quantity - $1
+                    WHERE team_id = $2 AND name = $3
+                    "#,
+                    amount,
+                    team_id,
+                    resource_name
+                )
+                .execute(&mut *tx)
+                .await?;
+            }
+
+            // Handle category-based deduction
+            crate::coc::buildings::UpgradeCost::Category(category_name, amount) => {
+                // Get all resources in this category
+                let resources = sqlx::query!(
+                    r#"
+                    SELECT id, name, quantity
+                    FROM resources
+                    WHERE team_id = $1 AND category = $2
+                    ORDER BY quantity DESC
+                    "#,
+                    team_id,
+                    category_name
+                )
+                .fetch_all(&mut *tx)
+                .await?;
+
+                // Take the resources proportionally, starting with the largest quantities
+                let mut remaining = *amount as i64;
+
+                for resource in resources {
+                    if remaining <= 0 {
+                        break;
+                    }
+
+                    let to_deduct = std::cmp::min(resource.quantity, remaining);
+
+                    if to_deduct > 0 {
+                        sqlx::query!(
+                            r#"
+                            UPDATE resources
+                            SET quantity = quantity - $1
+                            WHERE id = $2
+                            "#,
+                            to_deduct,
+                            resource.id
+                        )
+                        .execute(&mut *tx)
+                        .await?;
+
+                        remaining -= to_duct;
+                    }
+                }
+
+                // If we couldn't deduct enough, report an error and rollback
+                if remaining > 0 {
+                    // Rollback the transaction
+                    tx.rollback().await?;
+
+                    return Err(Error::from(format!(
+                        "Could not deduct enough resources from category {}. Transaction rolled back.",
+                        category_name
+                    )));
+                }
+            }
+        }
     }
 
     // Upgrade the building
@@ -714,13 +801,12 @@ pub async fn upgrade_building(
         String::new()
     };
 
+    // Format the required resources for display in the success message
+    let formatted_resources = required_resources.join("\n");
+
     ctx.say(format!(
         "{}**{}** upgraded to level **{}** for team **{}**!\n\n**Resources used:**\n{}",
-        icon,
-        building_display_name,
-        target_level,
-        team_name,
-        required_resources.join("\n")
+        icon, building_display_name, target_level, team_name, formatted_resources
     ))
     .await?;
 

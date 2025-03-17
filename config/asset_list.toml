@@ -62,7 +62,7 @@
     upgrade_costs = [
         [1, "bones", 1],
         # Level 2
-        [2, "bones", 1],
+        [2, "$category:herbs", 12],
         # Level 3
         [3, "bones", 1],
         # Level 4
