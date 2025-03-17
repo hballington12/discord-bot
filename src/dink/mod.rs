@@ -3,7 +3,7 @@ use poise::serenity_prelude as serenity;
 use crate::coc;
 use crate::coc::commands::update_team_embeds;
 use crate::coc::database::{
-    get_existing_resource, get_team_armory_level, get_team_slayer_level, get_user_team,
+    get_resource_quantity_by_name, get_team_armory_level, get_team_slayer_level, get_user_team,
     insert_new_resource, update_resource_quantity,
 };
 use crate::{Context, Data, Error};
@@ -165,7 +165,7 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
                 .await?;
 
         // Check if this resource already exists for the team
-        let existing_resource = get_existing_resource(pool, team.0, &category).await?;
+        let existing_resource = get_resource_quantity_by_name(pool, team.0, &item_name).await?;
         println!("Existing resource: {:?}", existing_resource);
 
         match existing_resource {
@@ -181,7 +181,7 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
             }
             None => {
                 // Insert new resource entry
-                insert_new_resource(pool, team.0, &category, quantity as i64).await?;
+                insert_new_resource(pool, team.0, &item_name, &category, quantity as i64).await?;
 
                 println!(
                     "Added new resource for team '{}': {} x {}",

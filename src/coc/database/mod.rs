@@ -76,7 +76,7 @@ pub async fn get_team_slayer_level(
     Ok(result.map(|record| record.has_access.unwrap_or(false)))
 }
 
-pub async fn get_existing_resource(
+pub async fn get_resource_quantity_by_name(
     pool: &SqlitePool,
     team_id: i32,
     item_name: &str,
@@ -85,7 +85,7 @@ pub async fn get_existing_resource(
         r#"
         SELECT quantity 
         FROM resources
-        WHERE team_id = $1 AND resource_name = $2
+        WHERE team_id = $1 AND name = $2
         "#,
         team_id,
         item_name
@@ -94,6 +94,34 @@ pub async fn get_existing_resource(
     .await?;
 
     Ok(result.map(|record| record.quantity))
+}
+
+/// Get the total quantity of resources in a specific category for a team
+pub async fn get_resource_quantity_by_category(
+    pool: &SqlitePool,
+    team_id: i32,
+    category: &str,
+) -> Result<i64, Error> {
+    // Using SQLite query to sum quantities and count distinct resources
+    let result = sqlx::query!(
+        r#"
+        SELECT 
+            SUM(quantity) as "total_quantity: i64"
+        FROM resources
+        WHERE team_id = ? AND category = ?
+        GROUP BY category
+        "#,
+        team_id,
+        category
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    // If no resources found in the category, return zeros
+    match result {
+        Some(row) => Ok(row.total_quantity.unwrap_or(0)),
+        None => Ok(0),
+    }
 }
 
 pub async fn update_resource_quantity(
@@ -106,7 +134,7 @@ pub async fn update_resource_quantity(
         r#"
         UPDATE resources
         SET quantity = $1
-        WHERE team_id = $2 AND resource_name = $3
+        WHERE team_id = $2 AND name = $3
         "#,
         quantity,
         team_id,
@@ -122,6 +150,7 @@ pub async fn insert_new_resource(
     pool: &SqlitePool,
     team_id: i32,
     item_name: &str,
+    category: &str,
     quantity: i64,
 ) -> Result<(), Error> {
     let max_id_result = sqlx::query!(
@@ -136,13 +165,14 @@ pub async fn insert_new_resource(
 
     sqlx::query!(
         r#"
-        INSERT INTO resources (team_id, id, quantity, resource_name)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO resources (team_id, id, quantity, name, category)
+        VALUES ($1, $2, $3, $4, $5)
         "#,
         team_id,
         next_id,
         quantity,
-        item_name
+        item_name,
+        category
     )
     .execute(pool)
     .await?;
@@ -338,7 +368,7 @@ pub async fn get_team_resources(
 ) -> Result<Vec<(i32, String, i64)>, Error> {
     let resources = sqlx::query!(
         r#"
-        SELECT id as "id: Option<i32>", resource_name, quantity 
+        SELECT id as "id: Option<i32>", category, quantity 
         FROM resources
         WHERE team_id = $1
         "#,
@@ -349,7 +379,7 @@ pub async fn get_team_resources(
 
     Ok(resources
         .into_iter()
-        .map(|res| (res.id.unwrap().unwrap(), res.resource_name, res.quantity))
+        .map(|res| (res.id.unwrap().unwrap(), res.category, res.quantity))
         .collect())
 }
 

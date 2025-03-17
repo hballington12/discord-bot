@@ -124,7 +124,7 @@ pub async fn get_team(data: &Data, team_name: &String) -> Result<Option<Team>, E
     // Query resources for this team
     let resources = sqlx::query!(
         r#"
-        SELECT id as "id: Option<i32>", resource_name, quantity 
+        SELECT id as "id: Option<i32>", category, quantity 
         FROM resources
         WHERE team_id = $1
         "#,
@@ -136,7 +136,7 @@ pub async fn get_team(data: &Data, team_name: &String) -> Result<Option<Team>, E
     // Build the resource map
     let mut resource_map = HashMap::new();
     for res in resources.iter() {
-        resource_map.insert(res.resource_name.clone(), res.quantity);
+        resource_map.insert(res.category.clone(), res.quantity);
     }
 
     // Create the Team struct

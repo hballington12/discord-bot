@@ -86,6 +86,7 @@ async fn main() {
             coc::commands::create_buildings_embed(),
             coc::commands::downgrade_building(),
             coc::commands::helper::lookup_resource(),
+            coc::commands::helper::lookup_category(),
             commands::simple_embed(),
             commands::edit_embed(),
         ],

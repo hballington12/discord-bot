@@ -632,7 +632,7 @@ pub async fn upgrade_building(
         let resource_query = sqlx::query!(
             r#"
             SELECT quantity FROM resources
-            WHERE team_id = $1 AND resource_name = $2
+            WHERE team_id = $1 AND category = $2
             "#,
             team_id,
             resource_name
@@ -672,6 +672,8 @@ pub async fn upgrade_building(
     // Step 9: Begin transaction to update resources and building level
     let mut tx = pool.begin().await?;
 
+    println!("Starting transaction. WARN: probably needs fixing");
+
     // Deduct resources
     for (resource_name, amount) in &costs {
         let amount = *amount as i64;
@@ -679,7 +681,7 @@ pub async fn upgrade_building(
             r#"
             UPDATE resources
             SET quantity = quantity - $1
-            WHERE team_id = $2 AND resource_name = $3
+            WHERE team_id = $2 AND category = $3
             "#,
             amount,
             team_id,
