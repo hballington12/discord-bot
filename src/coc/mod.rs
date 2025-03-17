@@ -82,7 +82,7 @@ impl Team {
     }
 
     /// Creates a message builder with the team embed
-    pub async fn create_message(&self) -> Result<CreateMessage, Error> {
+    pub async fn create_resource_message(&self) -> Result<CreateMessage, Error> {
         let embed = self.make_resource_embed();
 
         // Create the message with the embed

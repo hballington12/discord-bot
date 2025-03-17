@@ -98,27 +98,24 @@ pub async fn get_buildings_embed(
         .iter()
         .find(|b| b.building_name.to_lowercase() == "armory");
     if let Some(armory) = armory {
-        if armory.level > 0 {
-            // Only if armory is built
-            let combat_access = sqlx::query!(
-                r#"
-                SELECT max_combat_level
-                FROM armory_combat_mapping
-                WHERE armory_level = $1
-                "#,
-                armory.level
-            )
-            .fetch_optional(pool)
-            .await?;
+        let combat_access = sqlx::query!(
+            r#"
+            SELECT max_combat_level
+            FROM armory_combat_mapping
+            WHERE armory_level = $1
+            "#,
+            armory.level
+        )
+        .fetch_optional(pool)
+        .await?;
 
-            if let Some(combat_data) = combat_access {
-                let mut armory_info = HashMap::new();
-                armory_info.insert(
-                    "combat_level".to_string(),
-                    format!("{}", combat_data.max_combat_level),
-                );
-                building_special_info.insert("armory".to_string(), armory_info);
-            }
+        if let Some(combat_data) = combat_access {
+            let mut armory_info = HashMap::new();
+            armory_info.insert(
+                "combat_level".to_string(),
+                format!("{}", combat_data.max_combat_level),
+            );
+            building_special_info.insert("armory".to_string(), armory_info);
         }
     }
 
@@ -170,30 +167,19 @@ pub async fn get_buildings_embed(
             };
 
             // Format the level display
-            let level_display = if building.level == 0 {
-                "**Not built.**".to_string()
+            let max_level = building_config.map(|c| c.max_level).unwrap_or(9);
+            let level_display = if building.level as u32 >= max_level {
+                format!("**MAX** ({})", building.level)
             } else {
-                let max_level = building_config.map(|c| c.max_level).unwrap_or(9);
-                if building.level as u32 >= max_level {
-                    format!("**MAX** ({})", building.level)
-                } else {
-                    format!("{}/{}", building.level, max_level)
-                }
+                format!("{}/{}", building.level, max_level)
             };
 
             // Format the Town Hall entry
             town_hall_entry = format!(
-                "{} `{:<width$}` : {}{}\n",
+                "{} `{:<width$}` : Level **{}**\n",
                 if icon.is_empty() { "🏢" } else { &icon },
                 display_name,
-                match building.level {
-                    0 => "Level ",
-                    _ => "Level **",
-                },
-                match building.level {
-                    0 => level_display,
-                    _ => format!("{}**", level_display),
-                },
+                level_display,
                 width = max_name_length
             );
 
@@ -220,64 +206,43 @@ pub async fn get_buildings_embed(
             None => (building.building_name.clone(), String::new()),
         };
 
-        // Special handling for Builder's Hut
-        let is_builders_hut = building_key == "builders_hut";
-
-        // Format the level display
-        let level_display = if building.level == 0 {
-            // If building level is 0, show "Not built."
-            "**Not built.**".to_string()
-        } else if is_builders_hut {
-            // Special display for Builder's Hut
-            let max_level = building_config.map(|c| c.max_level).unwrap_or(5);
-            if building.level as u32 >= max_level {
-                format!("**{}** (Maximum)", building.level)
-            } else {
-                format!("{}/{}", building.level, max_level)
-            }
+        // Format the level display - no level 0 case anymore
+        let max_level = building_config.map(|c| c.max_level).unwrap_or(9);
+        let level_display = if building.level as u32 >= max_level {
+            format!("**MAX** ({})", building.level)
         } else {
-            // Standard display for other buildings
-            let max_level = building_config.map(|c| c.max_level).unwrap_or(9);
-            if building.level as u32 >= max_level {
-                format!("**MAX** ({})", building.level)
-            } else {
-                format!("{}/{}", building.level, max_level)
-            }
+            format!("{}/{}", building.level, max_level)
         };
 
         // Format the basic building info
         let mut building_entry = format!(
-            "{} `{:<width$}` : {}{}",
+            "{} `{:<width$}` : Level **{}**",
             if icon.is_empty() { "🏢" } else { &icon },
             display_name,
-            match building.level {
-                0 =>
-                    if is_builders_hut {
-                        "Quantity: "
-                    } else {
-                        "Level "
-                    },
-                _ =>
-                    if is_builders_hut {
-                        "**Quantity: "
-                    } else {
-                        "Level **"
-                    },
-            },
-            match building.level {
-                0 => level_display,
-                _ => format!("{}**", level_display),
-            },
+            level_display,
             width = max_name_length
         );
 
         // Add special info for certain buildings
         // Special handling for Armory (Combat Level Access)
-        if building_key == "armory" && building.level > 0 {
+        if building_key == "armory" {
             if let Some(armory_info) = building_special_info.get("armory") {
                 if let Some(combat_level) = armory_info.get("combat_level") {
                     building_entry.push_str(&format!(
                         "\n   ┗ **NPC Combat Level**: Up to level {}\n",
+                        combat_level
+                    ));
+                }
+            }
+        }
+
+        // Add special info for certain buildings
+        // Special handling for Slayer Master (Combat Level Access)
+        if building_key == "slayer_master" {
+            if let Some(slayer_info) = building_special_info.get("slayer_master") {
+                if let Some(combat_level) = slayer_info.get("slayer_level") {
+                    building_entry.push_str(&format!(
+                        "\n   ┗ **NPC Slayer Level**: Up to level {}\n",
                         combat_level
                     ));
                 }

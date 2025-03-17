@@ -39,10 +39,10 @@ impl Bestiary {
 
                         // Clean the monster name by removing anything after " - "
                         let clean_monster_name =
-                            if let Some(dash_idx) = raw_monster_name.find(" - ") {
-                                raw_monster_name[0..dash_idx].trim().to_string()
-                            } else if let Some(paren_idx) = raw_monster_name.find(" (") {
+                            if let Some(paren_idx) = raw_monster_name.find(" (") {
                                 raw_monster_name[0..paren_idx].trim().to_string()
+                            } else if let Some(dash_idx) = raw_monster_name.find(" - ") {
+                                raw_monster_name[0..dash_idx].trim().to_string()
                             } else {
                                 raw_monster_name.to_string()
                             };
@@ -223,6 +223,9 @@ mod tests {
             // Check a specific monster
             let chicken_level = bestiary.get_combat_level("Chicken");
             assert_eq!(chicken_level, Some(1), "Chicken should be combat level 1");
+
+            let cave_goblin_level = bestiary.get_combat_level("Cave goblin");
+            assert_eq!(cave_goblin_level, Some(3), "Should be level 3");
 
             let dragon_level = bestiary.get_combat_level("Green dragon");
             assert_eq!(

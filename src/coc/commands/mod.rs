@@ -22,7 +22,12 @@ pub async fn list_teams(ctx: Context<'_>) -> Result<(), Error> {
     let teams = crate::coc::database::get_all_teams(pool).await?;
 
     if teams.is_empty() {
-        ctx.say("No teams found in the database.").await?;
+        ctx.send(
+            poise::CreateReply::default()
+                .content("No teams found in the database.")
+                .ephemeral(true),
+        )
+        .await?;
         return Ok(());
     }
 
@@ -33,7 +38,12 @@ pub async fn list_teams(ctx: Context<'_>) -> Result<(), Error> {
         .collect::<Vec<_>>()
         .join("\n");
 
-    ctx.say(format!("**Teams:**\n{}", response)).await?;
+    ctx.send(
+        poise::CreateReply::default()
+            .content(format!("**Teams:**\n{}", response))
+            .ephemeral(true),
+    )
+    .await?;
     Ok(())
 }
 
@@ -53,8 +63,12 @@ pub async fn add_team(
 
     // Check if team with this name already exists using the database function
     if let Some(_) = crate::coc::database::get_team_by_name(pool, &team_name).await? {
-        ctx.say(format!("Team '{}' already exists!", team_name))
-            .await?;
+        ctx.send(
+            poise::CreateReply::default()
+                .content(format!("Team '{}' already exists!", team_name))
+                .ephemeral(true),
+        )
+        .await?;
         return Ok(());
     }
 
@@ -92,6 +106,7 @@ pub async fn add_team(
         building_id += 1;
     }
 
+    // This message should be public as it's a positive notification
     ctx.say(format!(
         "Team '{}' created successfully! (ID: {})",
         team_name, next_id
@@ -114,8 +129,12 @@ pub async fn remove_team(
 
     // Check if team with this name exists
     if let None = crate::coc::database::get_team_by_name(pool, &team_name).await? {
-        ctx.say(format!("No team found with name '{}'", team_name))
-            .await?;
+        ctx.send(
+            poise::CreateReply::default()
+                .content(format!("No team found with name '{}'", team_name))
+                .ephemeral(true),
+        )
+        .await?;
         return Ok(());
     }
 
@@ -125,6 +144,7 @@ pub async fn remove_team(
     // Delete the team from the database
     crate::coc::database::delete_team(pool, &team_name).await?;
 
+    // Use a public notification for successful team deletion
     ctx.say(format!(
         "Team '{}' has been deleted successfully.",
         team_name,
@@ -152,18 +172,26 @@ pub async fn add_player(
     let team_id = match crate::coc::database::get_team_by_name(pool, &team_name).await? {
         Some(id) => id,
         None => {
-            ctx.say(format!("No team found with name '{}'", team_name))
-                .await?;
+            ctx.send(
+                poise::CreateReply::default()
+                    .content(format!("No team found with name '{}'", team_name))
+                    .ephemeral(true),
+            )
+            .await?;
             return Ok(());
         }
     };
 
     // Check if the player is already on this team
     if let Some(_) = crate::coc::database::get_team_member(pool, team_id, &username).await? {
-        ctx.say(format!(
-            "Player '{}' is already a member of team '{}'",
-            username, team_name
-        ))
+        ctx.send(
+            poise::CreateReply::default()
+                .content(format!(
+                    "Player '{}' is already a member of team '{}'",
+                    username, team_name
+                ))
+                .ephemeral(true),
+        )
         .await?;
         return Ok(());
     }
@@ -175,8 +203,9 @@ pub async fn add_player(
     // Add the player to the team
     crate::coc::database::insert_team_member(pool, next_id, team_id, &username).await?;
 
+    // Use public message for successful addition
     ctx.say(format!(
-        "Successfully added player '{}' to team '{}'",
+        "Player '{}' has been added to team '{}'!",
         username, team_name
     ))
     .await?;
@@ -199,10 +228,14 @@ pub async fn remove_player(
     // Check if player exists in any team
     let team_info = crate::coc::database::get_user_team(pool, &username).await?;
 
-    // If player is not in any team, inform the user
+    // If player is not in any team, inform the user with ephemeral message
     if team_info.is_none() {
-        ctx.say(format!("Player '{}' is not a member of any team", username))
-            .await?;
+        ctx.send(
+            poise::CreateReply::default()
+                .content(format!("Player '{}' is not a member of any team", username))
+                .ephemeral(true),
+        )
+        .await?;
         return Ok(());
     }
 
@@ -212,6 +245,7 @@ pub async fn remove_player(
     // Remove the player from all teams
     crate::coc::database::delete_team_members(pool, &username).await?;
 
+    // Public message for successful removal
     ctx.say(format!(
         "Successfully removed player '{}' from team: {}",
         username, team_name
@@ -237,7 +271,7 @@ pub async fn create_resource_embed(
     match team_opt {
         Some(team) => {
             // Use the team's create_message method
-            let message_builder = team.create_message().await?;
+            let message_builder = team.create_resource_message().await?;
 
             // Send the message
             println!("Sending team resource message");
@@ -275,18 +309,31 @@ pub async fn create_resource_embed(
                         .await?;
                     }
 
-                    ctx.say("Resource embed created and recorded successfully!")
-                        .await?;
+                    ctx.send(
+                        poise::CreateReply::default()
+                            .content("Resource embed created and recorded successfully!")
+                            .ephemeral(true),
+                    )
+                    .await?;
                 }
                 Err(why) => {
                     println!("Error sending message: {why:?}");
-                    ctx.say(format!("Error sending message: {}", why)).await?;
+                    ctx.send(
+                        poise::CreateReply::default()
+                            .content(format!("Error sending message: {}", why))
+                            .ephemeral(true),
+                    )
+                    .await?;
                 }
             }
         }
         None => {
-            ctx.say(format!("No team found with name '{}'", team_name))
-                .await?;
+            ctx.send(
+                poise::CreateReply::default()
+                    .content(format!("No team found with name '{}'", team_name))
+                    .ephemeral(true),
+            )
+            .await?;
         }
     }
 
@@ -309,8 +356,12 @@ pub async fn list_team_resources(
     let team_id = match crate::coc::database::get_team_by_name(pool, &team_name).await? {
         Some(id) => id,
         None => {
-            ctx.say(format!("No team found with name '{}'", team_name))
-                .await?;
+            ctx.send(
+                poise::CreateReply::default()
+                    .content(format!("No team found with name '{}'", team_name))
+                    .ephemeral(true),
+            )
+            .await?;
             return Ok(());
         }
     };
@@ -319,8 +370,12 @@ pub async fn list_team_resources(
     let resources = crate::coc::database::get_team_resources(pool, team_id).await?;
 
     if resources.is_empty() {
-        ctx.say(format!("No resources found for team '{}'", team_name))
-            .await?;
+        ctx.send(
+            poise::CreateReply::default()
+                .content(format!("No resources found for team '{}'", team_name))
+                .ephemeral(true),
+        )
+        .await?;
         return Ok(());
     }
 
@@ -328,15 +383,19 @@ pub async fn list_team_resources(
     let response = resources
         .iter()
         .map(|(id, resource_name, quantity)| {
-            format!("• **{:?}**: {} (Amount: {})", id, resource_name, quantity)
+            format!("• **{}**: {} (Amount: {})", id, resource_name, quantity)
         })
         .collect::<Vec<_>>()
         .join("\n");
 
-    ctx.say(format!(
-        "**Resources for team '{}':**\n{}",
-        team_name, response
-    ))
+    ctx.send(
+        poise::CreateReply::default()
+            .content(format!(
+                "**Resources for team '{}':**\n{}",
+                team_name, response
+            ))
+            .ephemeral(true),
+    )
     .await?;
 
     Ok(())
@@ -473,19 +532,27 @@ pub async fn upgrade_building(
     let team_id = match team {
         Some(team) => team.id.ok_or_else(|| Error::from("Team ID is null"))?,
         None => {
-            ctx.say(format!("No team found with name '{}'", team_name))
-                .await?;
+            ctx.send(
+                poise::CreateReply::default()
+                    .content(format!("No team found with name '{}'", team_name))
+                    .ephemeral(true),
+            )
+            .await?;
             return Ok(());
         }
     };
 
     // Step 2: Check if the building exists in the configuration
     if !town_config.assets.contains_key(&building_name) {
-        ctx.say(format!(
-            "Building '{}' does not exist in the configuration. Available buildings: {}",
-            building_name,
-            town_config.get_building_types().join(", ")
-        ))
+        ctx.send(
+            poise::CreateReply::default()
+                .content(format!(
+                    "Building '{}' does not exist in the configuration. Available buildings: {}",
+                    building_name,
+                    town_config.get_building_types().join(", ")
+                ))
+                .ephemeral(true),
+        )
         .await?;
         return Ok(());
     }
@@ -510,10 +577,14 @@ pub async fn upgrade_building(
             building.level,
         ),
         None => {
-            ctx.say(format!(
-                "Team '{}' doesn't have a '{}' building. Please check the building name.",
-                team_name, building_name
-            ))
+            ctx.send(
+                poise::CreateReply::default()
+                    .content(format!(
+                        "Team '{}' doesn't have a '{}' building. Please check the building name.",
+                        team_name, building_name
+                    ))
+                    .ephemeral(true),
+            )
             .await?;
             return Ok(());
         }
@@ -522,10 +593,14 @@ pub async fn upgrade_building(
     // Step 4: Check if building is at max level
     let building_config = &town_config.assets[&building_name];
     if current_level as u32 >= building_config.max_level {
-        ctx.say(format!(
-            "Building '{}' is already at its maximum level ({})!",
-            building_name, current_level
-        ))
+        ctx.send(
+            poise::CreateReply::default()
+                .content(format!(
+                    "Building '{}' is already at its maximum level ({})!",
+                    building_name, current_level
+                ))
+                .ephemeral(true),
+        )
         .await?;
         return Ok(());
     }
@@ -535,10 +610,14 @@ pub async fn upgrade_building(
     let costs = town_config.get_upgrade_costs(&building_name, target_level as u32);
 
     if costs.is_empty() {
-        ctx.say(format!(
-            "No upgrade costs defined for {} at level {}. Please report this to an admin.",
-            building_name, target_level
-        ))
+        ctx.send(
+            poise::CreateReply::default()
+                .content(format!(
+                    "No upgrade costs defined for {} at level {}. Please report this to an admin.",
+                    building_name, target_level
+                ))
+                .ephemeral(true),
+        )
         .await?;
         return Ok(());
     }
@@ -574,13 +653,17 @@ pub async fn upgrade_building(
 
     // Step 8: If missing resources, inform the user and stop
     if !missing_resources.is_empty() {
-        ctx.say(format!(
-            "Insufficient resources to upgrade {} to level {}!\n\n**Required Resources:**\n{}\n\n**Missing Resources:**\n{}",
-            building_name,
-            target_level,
-            required_resources.join("\n"),
-            missing_resources.join("\n")
-        ))
+        ctx.send(
+            poise::CreateReply::default()
+                .content(format!(
+                    "Insufficient resources to upgrade {} to level {}!\n\n**Required Resources:**\n{}\n\n**Missing Resources:**\n{}",
+                    building_name,
+                    target_level,
+                    required_resources.join("\n"),
+                    missing_resources.join("\n")
+                ))
+                .ephemeral(true),
+        )
         .await?;
         return Ok(());
     }
@@ -620,7 +703,7 @@ pub async fn upgrade_building(
     // Commit the transaction
     tx.commit().await?;
 
-    // Step 10: Send success message
+    // Step 10: Send success message (public announcement)
     let building_display_name = building_config.name.clone();
     let icon = if !building_config.icon.is_empty() {
         format!("{} ", building_config.icon)
@@ -643,10 +726,14 @@ pub async fn upgrade_building(
         update_team_embeds(&ctx.serenity_context(), &ctx.data(), &team_name).await
     {
         if count > 0 {
-            ctx.say(format!(
-                "Updated {} team embeds with the new information.",
-                count
-            ))
+            ctx.send(
+                poise::CreateReply::default()
+                    .content(format!(
+                        "Updated {} team embeds with the new information.",
+                        count
+                    ))
+                    .ephemeral(true),
+            )
             .await?;
         }
     }
@@ -682,19 +769,27 @@ pub async fn downgrade_building(
     let team_id = match team {
         Some(team) => team.id.ok_or_else(|| Error::from("Team ID is null"))?,
         None => {
-            ctx.say(format!("No team found with name '{}'", team_name))
-                .await?;
+            ctx.send(
+                poise::CreateReply::default()
+                    .content(format!("No team found with name '{}'", team_name))
+                    .ephemeral(true),
+            )
+            .await?;
             return Ok(());
         }
     };
 
     // Step 2: Check if the building exists in the configuration
     if !town_config.assets.contains_key(&building_name) {
-        ctx.say(format!(
-            "Building '{}' does not exist in the configuration. Available buildings: {}",
-            building_name,
-            town_config.get_building_types().join(", ")
-        ))
+        ctx.send(
+            poise::CreateReply::default()
+                .content(format!(
+                    "Building '{}' does not exist in the configuration. Available buildings: {}",
+                    building_name,
+                    town_config.get_building_types().join(", ")
+                ))
+                .ephemeral(true),
+        )
         .await?;
         return Ok(());
     }
@@ -719,10 +814,14 @@ pub async fn downgrade_building(
             building.level,
         ),
         None => {
-            ctx.say(format!(
-                "Team '{}' doesn't have a '{}' building. Please check the building name.",
-                team_name, building_name
-            ))
+            ctx.send(
+                poise::CreateReply::default()
+                    .content(format!(
+                        "Team '{}' doesn't have a '{}' building. Please check the building name.",
+                        team_name, building_name
+                    ))
+                    .ephemeral(true),
+            )
             .await?;
             return Ok(());
         }
@@ -731,10 +830,14 @@ pub async fn downgrade_building(
     // Step 4: Check if building is at starting level or not built
     let building_config = &town_config.assets[&building_name];
     if current_level <= building_config.starting_level as i64 {
-        ctx.say(format!(
-            "Building '{}' is already at its starting level ({}) and cannot be downgraded further!",
-            building_name, current_level
-        ))
+        ctx.send(
+            poise::CreateReply::default()
+                .content(format!(
+                    "Building '{}' is already at its starting level ({}) and cannot be downgraded further!",
+                    building_name, current_level
+                ))
+                .ephemeral(true),
+        )
         .await?;
         return Ok(());
     }
@@ -754,7 +857,7 @@ pub async fn downgrade_building(
     .execute(pool)
     .await?;
 
-    // Step 7: Send success message
+    // Step 7: Send success message (public announcement)
     let building_display_name = building_config.name.clone();
     let icon = if !building_config.icon.is_empty() {
         format!("{} ", building_config.icon)
@@ -773,10 +876,14 @@ pub async fn downgrade_building(
         update_team_embeds(&ctx.serenity_context(), &ctx.data(), &team_name).await
     {
         if count > 0 {
-            ctx.say(format!(
-                "Updated {} team embeds with the new information.",
-                count
-            ))
+            ctx.send(
+                poise::CreateReply::default()
+                    .content(format!(
+                        "Updated {} team embeds with the new information.",
+                        count
+                    ))
+                    .ephemeral(true),
+            )
             .await?;
         }
     }
@@ -797,17 +904,21 @@ pub async fn create_buildings_embed(
     // Convert team name to lowercase for consistent lookups
     let team_name = team_name.to_lowercase();
 
-    let embed = match embed::get_buildings_embed(data, &team_name).await? {
+    let embeds = match embed::get_buildings_embed(data, &team_name).await? {
         Some(embed) => embed,
         None => {
-            ctx.say(format!("No buildings found for team '{}'", team_name))
-                .await?;
+            ctx.send(
+                poise::CreateReply::default()
+                    .content(format!("No buildings found for team '{}'", team_name))
+                    .ephemeral(true),
+            )
+            .await?;
             return Ok(());
         }
     };
 
     // Create the message builder with the embed
-    let message_builder = serenity::builder::CreateMessage::new().embed(embed);
+    let message_builder = serenity::builder::CreateMessage::new().embed(embeds);
 
     // Send the message
     println!("Sending team buildings message");
@@ -829,7 +940,12 @@ pub async fn create_buildings_embed(
             let team_id = match crate::coc::database::get_team_by_name(pool, &team_name).await? {
                 Some(id) => id,
                 None => {
-                    println!("no team found with name '{}'", team_name);
+                    ctx.send(
+                        poise::CreateReply::default()
+                            .content(format!("No team found with name '{}'", team_name))
+                            .ephemeral(true),
+                    )
+                    .await?;
                     return Ok(());
                 }
             };
@@ -854,12 +970,21 @@ pub async fn create_buildings_embed(
                 .await?;
             }
 
-            ctx.say("Buildings embed created and recorded successfully!")
-                .await?;
+            ctx.send(
+                poise::CreateReply::default()
+                    .content("Buildings embed created and recorded successfully!")
+                    .ephemeral(true),
+            )
+            .await?;
         }
         Err(why) => {
             println!("Error sending message: {why:?}");
-            ctx.say(format!("Error sending message: {}", why)).await?;
+            ctx.send(
+                poise::CreateReply::default()
+                    .content(format!("Error sending message: {}", why))
+                    .ephemeral(true),
+            )
+            .await?;
         }
     }
 

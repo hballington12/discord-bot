@@ -1,35 +1,35 @@
 [[resource_pattern]]
-    pattern = "bones"
-    category = "bone"
+    pattern = ".*bones"
+    category = "bones"
 
 [[resource_pattern]]
     pattern = "coal"
-    category = "mining"
+    category = "ores"
 
 [[resource_pattern]]
     pattern = ".* ore"
-    category = "mining"
+    category = "ores"
 
 [[resource_pattern]]
     pattern = "clay"
-    category = "mining"
+    category = "ores"
 
 [[resource_pattern]]
     pattern = ".* seed"
-    category = "farming"
+    category = "seeds"
 
 [[resource_pattern]]
     pattern = "coins"
-    category = "currency"
+    category = "coins"
 
 [[resource_pattern]]
-    pattern = " rune"
-    category = "rune"
+    pattern = ".* rune"
+    category = "runes"
+
+[[resource_pattern]]
+    pattern = "(grimy )?(guam|marrentill|tarromin|harralander|ranarr|toadflax|irit|avantoe|kwuarm|snapdragon|cadantine|lantadyme|dwarf weed|torstol)"
+    category = "herbs"
 
 [[resource_pattern]]
     pattern = "(uncut )?(sapphire|emerald|ruby|diamond|dragonstone|onyx)"
-    category = "crafting"
-
-[[resource_pattern]]
-    pattern = ".*"
-    category = "misc"
+    category = "gems"

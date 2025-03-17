@@ -165,27 +165,28 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
                 .await?;
 
         // Check if this resource already exists for the team
-        let existing_resource = get_existing_resource(pool, team.0, &item_name).await?;
+        let existing_resource = get_existing_resource(pool, team.0, &category).await?;
+        println!("Existing resource: {:?}", existing_resource);
 
         match existing_resource {
             Some(resource) => {
                 // Update quantity of existing resource
                 let new_quantity = resource + quantity as i64;
-                update_resource_quantity(pool, team.0, &item_name, new_quantity).await?;
+                update_resource_quantity(pool, team.0, &category, new_quantity).await?;
 
-                // println!(
-                //     "Updated resource quantity for team '{}': {} x {} (new total: {})",
-                //     team.1, item_name, quantity, new_quantity
-                // );
+                println!(
+                    "Updated resource quantity for team '{}': {} x {} (new total: {})",
+                    team.1, item_name, quantity, new_quantity
+                );
             }
             None => {
                 // Insert new resource entry
-                insert_new_resource(pool, team.0, &item_name, quantity as i64).await?;
+                insert_new_resource(pool, team.0, &category, quantity as i64).await?;
 
-                // println!(
-                //     "Added new resource for team '{}': {} x {}",
-                //     team.1, item_name, quantity
-                // );
+                println!(
+                    "Added new resource for team '{}': {} x {}",
+                    team.1, item_name, quantity
+                );
             }
         }
     }
