@@ -119,6 +119,32 @@ pub async fn get_buildings_embed(
         }
     }
 
+    // Find the slayer_master and query its slayer_level access
+    let slayer_master = buildings
+        .iter()
+        .find(|b| b.building_name.to_lowercase() == "slayer_master");
+    if let Some(slayer_master) = slayer_master {
+        let slayer_access = sqlx::query!(
+            r#"
+            SELECT slayer_level
+            FROM slayer_master_level_mapping
+            WHERE slayer_master_level = $1
+            "#,
+            slayer_master.level
+        )
+        .fetch_optional(pool)
+        .await?;
+
+        if let Some(slayer_data) = slayer_access {
+            let mut slayer_info = HashMap::new();
+            slayer_info.insert(
+                "slayer_level".to_string(),
+                format!("{}", slayer_data.slayer_level),
+            );
+            building_special_info.insert("slayer_master".to_string(), slayer_info);
+        }
+    }
+
     // Create the embed
     let mut embed = serenity::builder::CreateEmbed::new()
         .title(format!("🏗️ {} Team Buildings", team_id.1))

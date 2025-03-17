@@ -5,6 +5,7 @@ use ::serenity::all::CreateEmbed;
 use poise::serenity_prelude as serenity;
 
 mod embed;
+pub mod helper;
 
 /// Lists all teams in the database
 #[poise::command(slash_command, prefix_command, guild_only)]
