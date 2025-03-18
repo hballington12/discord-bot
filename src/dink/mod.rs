@@ -1,11 +1,11 @@
 use poise::serenity_prelude as serenity;
 
-use crate::coc;
 use crate::coc::commands::update_team_embeds;
 use crate::coc::database::{
     get_resource_quantity_by_name, get_team_armory_level, get_team_slayer_level, get_user_team,
     insert_new_resource, update_resource_quantity,
 };
+use crate::coc::{self, database};
 use crate::{Context, Data, Error};
 
 #[cfg(test)]
@@ -99,46 +99,78 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
             return Err(e.into());
         }
     };
+
     // Check if the source has a valid combat level
-    let source_combat_level = match data.bestiary.get_combat_level(&drop.source) {
-        Some(level) => level as i32,
-        None => {
-            println!("No combat level found for source '{}'", drop.source);
-            return Ok(());
-        }
-    };
-
-    //// TEMPORARY DISABLE
-    // // Check if team has access to monsters of this combat level
-    // if !get_team_armory_level(pool, source_combat_level, team.0)
-    //     .await?
-    //     .unwrap_or(false)
-    // {
-    //     println!(
-    //         "Team '{}' doesn't have access to combat level {} monsters",
-    //         team.1, source_combat_level
-    //     );
-    //     return Ok(());
-    // }
-
-    match data.bestiary.get_slayer_level(&drop.source) {
+    match data.bestiary.get_combat_level(&drop.source) {
         Some(level) => {
-            println!("Slayer level for source '{}': {}", drop.source, level);
+            let source_combat_level = level as i32;
 
-            // Check if team has necessary slayer level
-            if !get_team_slayer_level(pool, level as i32, team.0)
-                .await?
-                .unwrap_or(false)
-            {
-                println!(
-                    "Team '{}' doesn't have access to slayer level {} monsters",
-                    team.1, level
-                );
+            //// TEMPORARY DISABLE
+            // // Check if team has access to monsters of this combat level
+            // if !get_team_armory_level(pool, source_combat_level, team.0)
+            //     .await?
+            //     .unwrap_or(false)
+            // {
+            //     println!(
+            //         "Team '{}' doesn't have access to combat level {} monsters",
+            //         team.1, source_combat_level
+            //     );
+            //     return Ok(());
+            // }
+
+            match data.bestiary.get_slayer_level(&drop.source) {
+                Some(level) => {
+                    println!("Slayer level for source '{}': {}", drop.source, level);
+
+                    // Check if team has necessary slayer level
+                    if !get_team_slayer_level(pool, level as i32, team.0)
+                        .await?
+                        .unwrap_or(false)
+                    {
+                        println!(
+                            "Team '{}' doesn't have access to slayer level {} monsters",
+                            team.1, level
+                        );
+                        return Ok(());
+                    }
+                }
+                None => {}
+            }
+        }
+        None => {
+            // retrieve the teams garrisons level
+            let garrisons_level =
+                database::get_team_building_level(pool, team.0, "garrisons").await?;
+
+            // allow the code to proceed if the source is a raid drop
+            // valid raids are:
+            // "Tombs of Amascut" garrisons level 2
+            // "Chambers of Xeric", garrisons level 3
+            // "Theatre of Blood", garrisons level 4
+
+            // check the different patterns and return early if garrisons level is not met
+            // first check toms of amascut
+            if drop.source.to_lowercase() == "tombs of amascut" {
+                if garrisons_level < 2 {
+                    println!("Team '{}' doesn't have access to Tombs of Amascut", team.1);
+                    return Ok(());
+                }
+            } else if drop.source.to_lowercase() == "chambers of xeric" {
+                if garrisons_level < 3 {
+                    println!("Team '{}' doesn't have access to Chambers of Xeric", team.1);
+                    return Ok(());
+                }
+            } else if drop.source.to_lowercase() == "theatre of blood" {
+                if garrisons_level < 4 {
+                    println!("Team '{}' doesn't have access to Theatre of Blood", team.1);
+                    return Ok(());
+                }
+            } else {
+                println!("No combat level found for source '{}'", drop.source);
                 return Ok(());
             }
         }
-        None => {}
-    }
+    };
 
     // Process each item in the drop
     for (item_name, quantity) in drop.loots {
@@ -172,7 +204,7 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
             Some(resource) => {
                 // Update quantity of existing resource
                 let new_quantity = resource + quantity as i64;
-                update_resource_quantity(pool, team.0, &category, new_quantity).await?;
+                update_resource_quantity(pool, team.0, &item_name, new_quantity).await?;
 
                 println!(
                     "Updated resource quantity for team '{}': {} x {} (new total: {})",

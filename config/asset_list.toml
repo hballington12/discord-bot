@@ -177,47 +177,47 @@
         [9, "ancient_core", 1],
     ]
 
-# Fishmonger's Shop - For enhancing fishing resources
-[assets.fishmonger_shop]
-    name = "Fishmonger's Shop"
-    description = "Increases fishing efficiency and provides access to rare fishing spots. Higher levels unlock better fish preservation methods."
-    starting_level = 1
-    max_level = 9
-    icon = "🎣"
+    # # Fishmonger's Shop - For enhancing fishing resources
+    # [assets.fishmonger_shop]
+    #     name = "Fishmonger's Shop"
+    #     description = "Increases fishing efficiency and provides access to rare fishing spots. Higher levels unlock better fish preservation methods."
+    #     starting_level = 1
+    #     max_level = 9
+    #     icon = "🎣"
 
-    # Upgrade requirements for Fishmonger's Shop by level
-    upgrade_costs = [
-        [1, "bones", 1],
-        # Level 2
-        [2, "bones", 2],
-        [2, "raw_fish", 10],
-        # Level 3
-        [3, "bones", 5],
-        [3, "raw_fish", 50],
-        # Level 4
-        [4, "coins", 5],
-        [4, "raw_fish", 150],
-        # Level 5
-        [5, "coins", 10],
-        [5, "raw_fish", 300],
-        # Level 6
-        [6, "coins", 20],
-        [6, "raw_fish", 600],
-        [6, "crystal", 5],
-        # Level 7
-        [7, "coins", 40],
-        [7, "raw_fish", 1200],
-        [7, "crystal", 15],
-        # Level 8
-        [8, "coins", 80],
-        [8, "raw_fish", 2400],
-        [8, "crystal", 30],
-        # Level 9
-        [9, "coins", 160],
-        [9, "raw_fish", 4800],
-        [9, "crystal", 60],
-        [9, "ancient_core", 1],
-    ]
+    #     # Upgrade requirements for Fishmonger's Shop by level
+    #     upgrade_costs = [
+    #         [1, "bones", 1],
+    #         # Level 2
+    #         [2, "bones", 2],
+    #         [2, "raw_fish", 10],
+    #         # Level 3
+    #         [3, "bones", 5],
+    #         [3, "raw_fish", 50],
+    #         # Level 4
+    #         [4, "coins", 5],
+    #         [4, "raw_fish", 150],
+    #         # Level 5
+    #         [5, "coins", 10],
+    #         [5, "raw_fish", 300],
+    #         # Level 6
+    #         [6, "coins", 20],
+    #         [6, "raw_fish", 600],
+    #         [6, "crystal", 5],
+    #         # Level 7
+    #         [7, "coins", 40],
+    #         [7, "raw_fish", 1200],
+    #         [7, "crystal", 15],
+    #         # Level 8
+    #         [8, "coins", 80],
+    #         [8, "raw_fish", 2400],
+    #         [8, "crystal", 30],
+    #         # Level 9
+    #         [9, "coins", 160],
+    #         [9, "raw_fish", 4800],
+    #         [9, "crystal", 60],
+    #         [9, "ancient_core", 1],
+    #     ]
 
 # Herbalist's Hut - For enhancing herblore resources
 [assets.herbalist_hut]
@@ -340,47 +340,6 @@
         [9, "seeds", 4800],
     ]
 
-# Hunter's Lodge - For enhancing hunting resources
-[assets.hunters_lodge]
-    name = "Hunter's Lodge"
-    description = "Improves trapping efficiency and animal processing. Higher levels unlock rare animal parts and better hunting grounds."
-    starting_level = 1
-    max_level = 9
-    icon = "🏹"
-
-    # Upgrade requirements for Hunter's Lodge by level
-    upgrade_costs = [
-        [1, "bones", 1],
-        # Level 2
-        [2, "bones", 2],
-        [2, "hides", 10],
-        # Level 3
-        [3, "bones", 5],
-        [3, "hides", 50],
-        # Level 4
-        [4, "coins", 5],
-        [4, "hides", 150],
-        # Level 5
-        [5, "coins", 10],
-        [5, "hides", 300],
-        # Level 6
-        [6, "coins", 20],
-        [6, "hides", 600],
-        [6, "crystal", 5],
-        # Level 7
-        [7, "coins", 40],
-        [7, "hides", 1200],
-        [7, "crystal", 15],
-        # Level 8
-        [8, "coins", 80],
-        [8, "hides", 2400],
-        [8, "crystal", 30],
-        # Level 9
-        [9, "coins", 160],
-        [9, "hides", 4800],
-        [9, "crystal", 60],
-        [9, "ancient_core", 1],
-    ]
 
 # Magic Workshop - For enhancing runecrafting and enchanting
 [assets.rune_shop]
@@ -447,4 +406,25 @@
         [8, "gems", 40],
         # Level 9
         [9, "gems", 80],
+    ]
+
+[assets.garrisons]
+    name = "Garrisons"
+    description = "Allows you to access drops from raids."
+    starting_level = 1
+    max_level = 4
+    icon = "🏯"
+
+    # Upgrade requirements for Garrisons by level
+    upgrade_costs = [
+        [1, "bones", 1],
+        # Level 2
+        [2, "bones", 2],
+        [2, "coins", 10],
+        # Level 3
+        [3, "bones", 5],
+        [3, "coins", 50],
+        # Level 4
+        [4, "bones", 10],
+        [4, "coins", 100],
     ]

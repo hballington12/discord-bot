@@ -87,6 +87,7 @@ async fn main() {
             coc::commands::downgrade_building(),
             coc::commands::helper::lookup_resource(),
             coc::commands::helper::lookup_category(),
+            coc::commands::buildings_overview(),
             commands::simple_embed(),
             commands::edit_embed(),
         ],

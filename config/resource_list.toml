@@ -34,6 +34,7 @@
     pattern = "(uncut )?(sapphire|emerald|ruby|diamond|dragonstone|onyx)"
     category = "gems"
 
+
 [[resource_pattern]]
-    pattern = ".*"    # catchall
+    pattern = ".*"    # catchall, must be last
     category = "misc"

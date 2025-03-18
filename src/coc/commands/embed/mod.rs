@@ -147,7 +147,7 @@ pub async fn get_buildings_embed(
 
     // Create the embed
     let mut embed = serenity::builder::CreateEmbed::new()
-        .title(format!("🏗️ {} Team Buildings", team_id.1))
+        .title(format!("🏗️ Buildings for: {}", team_id.1))
         .description(format!(
             "Building infrastructure for team **{}**",
             team_id.1
@@ -275,34 +275,45 @@ pub async fn get_buildings_embed(
             }
         }
 
+        // Special handling for Garrisons (Raid Access)
+        if building_key == "garrisons" {
+            let raid_access = match building.level {
+                2 => "Access to: ToA",
+                3 => "Access to: ToA and CoX",
+                4 => "Access to: All raids",
+                _ => "No raid access",
+            };
+
+            building_entry.push_str(&format!("\n   ┗ **Raid Access**: {}\n", raid_access));
+        }
+
         // Add bonus information if this building provides any
         if let Some(bonuses) = building_bonuses.get(&building_key) {
             building_entry.push_str("\n");
 
             // Show resource bonuses in a nice format
             for (resource_category, multiplier, flat_bonus) in bonuses {
-                let multiplier_percent = (multiplier - 1.0) * 100.0;
+                let mut bonus_text = String::new();
 
-                if multiplier_percent > 0.0 && *flat_bonus > 0 {
-                    building_entry.push_str(&format!(
-                        "   ┗ {} +{:.0}% & +{} per drop\n",
-                        resource_category_display(resource_category),
-                        multiplier_percent,
-                        flat_bonus
-                    ));
-                } else if multiplier_percent > 0.0 {
-                    building_entry.push_str(&format!(
-                        "   ┗ {} +{:.0}% per drop\n",
-                        resource_category_display(resource_category),
-                        multiplier_percent
-                    ));
-                } else if *flat_bonus > 0 {
-                    building_entry.push_str(&format!(
-                        "   ┗ {} +{} per drop\n",
-                        resource_category_display(resource_category),
-                        flat_bonus
-                    ));
+                // Add multiplier if not default (1.0)
+                if *multiplier > 1.0 {
+                    if !bonus_text.is_empty() {
+                        bonus_text.push_str(", ");
+                    }
+                    bonus_text.push_str(&format!("{:.1}x multiplier", multiplier));
                 }
+
+                // Add flat bonus if present
+                if *flat_bonus > 0 {
+                    bonus_text.push_str(&format!(", +{} bonus", flat_bonus));
+                }
+
+                // Add the formatted resource bonus line
+                building_entry.push_str(&format!(
+                    "   ┗ {}: {}\n",
+                    resource_category_display(resource_category),
+                    bonus_text
+                ));
             }
         }
 
@@ -333,4 +344,88 @@ fn resource_category_display(category: &str) -> &str {
         "hunting" => "Hunting Yields",
         _ => category,
     }
+}
+
+pub async fn get_all_overview_embed(data: &Data) -> Result<Option<CreateEmbed>, Error> {
+    let town_config = &data.town_config;
+    let pool = &data.database;
+
+    // Get all building types (distinct building names)
+    let buildings = sqlx::query!(
+        r#"
+        SELECT DISTINCT building_name
+        FROM team_buildings
+        ORDER BY building_name ASC
+        "#
+    )
+    .fetch_all(pool)
+    .await?;
+
+    if buildings.is_empty() {
+        println!("No buildings found");
+        return Ok(None);
+    }
+
+    // Order buildings with Town Hall first, then alphabetically
+    let mut ordered_buildings = buildings
+        .iter()
+        .map(|b| b.building_name.clone())
+        .collect::<Vec<String>>();
+
+    // Put townhall at the beginning if it exists
+    if let Some(pos) = ordered_buildings
+        .iter()
+        .position(|name| name.to_lowercase() == "townhall" || name.to_lowercase() == "town_hall")
+    {
+        let townhall = ordered_buildings.remove(pos);
+        ordered_buildings.insert(0, townhall);
+    }
+
+    // Create a list of buildings and their abbreviations
+    let mut building_legend = String::new();
+    building_legend.push_str("**Building Abbreviations:**\n");
+
+    for building in &ordered_buildings {
+        let building_key = building.to_lowercase();
+        let building_config = town_config.assets.get(&building_key);
+
+        // Get display name and icon
+        let (display_name, icon) = match building_config {
+            Some(config) => (config.name.clone(), config.icon.clone()),
+            None => (building.clone(), String::new()),
+        };
+
+        // Special case for Town Hall
+        if building_key == "townhall" || building_key == "town_hall" {
+            building_legend.push_str(&format!(
+                "{} **TH** - {}\n",
+                if icon.is_empty() { "🏢" } else { &icon },
+                display_name
+            ));
+            continue;
+        }
+
+        // For other buildings, use the first letter capitalized
+        let abbr = building_key
+            .chars()
+            .next()
+            .map(|c| c.to_uppercase().collect::<String>())
+            .unwrap_or_else(|| "?".to_string());
+
+        building_legend.push_str(&format!(
+            "{} **{}** - {}\n",
+            if icon.is_empty() { "🏢" } else { &icon },
+            abbr,
+            display_name
+        ));
+    }
+
+    // Create the embed with the building legend
+    let embed = serenity::builder::CreateEmbed::new()
+        .title("🏢 Building Overview")
+        .description("Legend for building abbreviations used in team overviews")
+        .field("Building Legend", building_legend, false)
+        .timestamp(serenity::model::Timestamp::now());
+
+    Ok(Some(embed))
 }

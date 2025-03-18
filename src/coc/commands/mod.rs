@@ -456,6 +456,7 @@ pub async fn update_team_embeds(
             }
             "resources" => {
                 // For resources variant, use the resource embed
+                println!("Getting resources embed");
                 team.make_resource_embed()
             }
             unknown => {
@@ -464,14 +465,13 @@ pub async fn update_team_embeds(
             }
         };
 
+        // println!("embed is: {:?}", embed);
         // Try to edit the message
         let result = channel_id
             .edit_message(
                 &ctx.http,
                 message_id,
-                serenity::builder::EditMessage::new()
-                    .content("This message was edited!")
-                    .embed(embed),
+                serenity::builder::EditMessage::new().embed(embed),
             )
             .await;
 
@@ -726,7 +726,7 @@ pub async fn upgrade_building(
                 // Get all resources in this category
                 let resources = sqlx::query!(
                     r#"
-                    SELECT id, name, quantity
+                    SELECT id as "id: Option<i32>", name, quantity
                     FROM resources
                     WHERE team_id = $1 AND category = $2
                     ORDER BY quantity DESC
@@ -760,7 +760,7 @@ pub async fn upgrade_building(
                         .execute(&mut *tx)
                         .await?;
 
-                        remaining -= to_duct;
+                        remaining -= to_deduct;
                     }
                 }
 
@@ -1062,6 +1062,59 @@ pub async fn create_buildings_embed(
             ctx.send(
                 poise::CreateReply::default()
                     .content("Buildings embed created and recorded successfully!")
+                    .ephemeral(true),
+            )
+            .await?;
+        }
+        Err(why) => {
+            println!("Error sending message: {why:?}");
+            ctx.send(
+                poise::CreateReply::default()
+                    .content(format!("Error sending message: {}", why))
+                    .ephemeral(true),
+            )
+            .await?;
+        }
+    }
+
+    Ok(())
+}
+
+/// Creates an overview embed showing all teams and their building levels
+#[poise::command(slash_command, prefix_command)]
+pub async fn buildings_overview(ctx: Context<'_>) -> Result<(), Error> {
+    // Get data from context
+    let data = ctx.data();
+
+    // Get the overview embed
+    let overview_embed = match embed::get_all_overview_embed(data).await? {
+        Some(embed) => embed,
+        None => {
+            ctx.send(
+                poise::CreateReply::default()
+                    .content("No teams or buildings found to create an overview.")
+                    .ephemeral(true),
+            )
+            .await?;
+            return Ok(());
+        }
+    };
+
+    // Create the message builder with the embed
+    let message_builder = serenity::builder::CreateMessage::new().embed(overview_embed);
+
+    // Send the message
+    println!("Sending buildings overview message");
+    let msg_result = ctx
+        .channel_id()
+        .send_message(&ctx.http(), message_builder)
+        .await;
+
+    match msg_result {
+        Ok(_) => {
+            ctx.send(
+                poise::CreateReply::default()
+                    .content("Buildings overview has been created successfully!")
                     .ephemeral(true),
             )
             .await?;

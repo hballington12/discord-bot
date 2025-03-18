@@ -22,7 +22,7 @@ impl Team {
     /// Creates an embed containing team information and resources
     pub fn make_resource_embed(&self) -> CreateEmbed {
         // Create the title with team name
-        let title = format!("{} Team Resources", self.name);
+        let title = format!("📦 Resources for: **{}** 🏛️", self.name);
 
         // Create footer with team ID
         let footer = CreateEmbedFooter::new(format!("Team ID: {}", self.id));
@@ -86,9 +86,7 @@ impl Team {
         let embed = self.make_resource_embed();
 
         // Create the message with the embed
-        let message = CreateMessage::new()
-            .content(format!("Team Info: **{}**", self.name))
-            .embed(embed);
+        let message = CreateMessage::new().embed(embed);
 
         Ok(message)
     }
@@ -114,19 +112,26 @@ pub async fn get_team(data: &Data, team_name: &String) -> Result<Option<Team>, E
 
     // If the team doesn't exist, inform the user and return early
     let team_id = match team {
-        Some(team) => team.id.ok_or_else(|| Error::from("Team ID is null"))?,
+        Some(team) => match team.id {
+            Some(id) => id,
+            None => return Err(Error::from("Team ID is null")),
+        },
         None => {
             println!("no team found with name '{}'", team_name);
             return Ok(None);
         }
     };
 
-    // Query resources for this team
+    // Query resources for this team, properly grouped and summed by category
     let resources = sqlx::query!(
         r#"
-        SELECT id as "id: Option<i32>", category, quantity 
+        SELECT 
+            category,
+            SUM(quantity) as "total_quantity: i64"
         FROM resources
         WHERE team_id = $1
+        GROUP BY category
+        ORDER BY category ASC
         "#,
         team_id
     )
@@ -136,12 +141,12 @@ pub async fn get_team(data: &Data, team_name: &String) -> Result<Option<Team>, E
     // Build the resource map
     let mut resource_map = HashMap::new();
     for res in resources.iter() {
-        resource_map.insert(res.category.clone(), res.quantity);
+        resource_map.insert(res.category.clone(), res.total_quantity.unwrap_or(0));
     }
 
     // Create the Team struct
     let team = Team {
-        id: team_id.unwrap(),
+        id: team_id.expect("Team ID is null"),
         name: team_name,
         resources: resource_map,
     };

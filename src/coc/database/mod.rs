@@ -534,9 +534,9 @@ pub async fn calculate_resource_total(
     let multiplier = get_team_resource_multiplier(pool, team_id, resource_category).await?;
     let flat_bonus = get_team_resource_flat_bonus(pool, team_id, resource_category).await?;
 
-    // Calculate total: round(base_amount * multiplier) + flat_bonus
-    let multiplied = (base_amount as f64 * multiplier).round() as i32;
-    let total = multiplied + flat_bonus;
+    // Apply multiplier first, then add flat bonus: floor(base_amount * multiplier) + flat_bonus
+    let with_multiplier = (base_amount as f64 * multiplier).floor() as i32;
+    let total = with_multiplier + flat_bonus;
 
     println!(
         "Calculated resource total: {} * {} + {} = {}",
@@ -544,4 +544,30 @@ pub async fn calculate_resource_total(
     );
 
     Ok(total)
+}
+
+/// Get the level of a specific building for a team
+/// Returns the building's level, or 0 if the building doesn't exist
+pub async fn get_team_building_level(
+    pool: &SqlitePool,
+    team_id: i32,
+    building_name: &str,
+) -> Result<i32, Error> {
+    let result = sqlx::query!(
+        r#"
+        SELECT level as "level: i32"
+        FROM team_buildings
+        WHERE team_id = ? AND building_name = ?
+        "#,
+        team_id,
+        building_name
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    // Return the level if found, otherwise return 0 (indicating the building doesn't exist)
+    match result {
+        Some(row) => Ok(row.level),
+        None => Ok(0), // Default level 0 means building doesn't exist
+    }
 }
