@@ -27,13 +27,80 @@
     category = "runes"
 
 [[resource_pattern]]
+    pattern = ".* logs"
+    category = "logs"
+
+[[resource_pattern]]
+    pattern = "(bandos tassets|bandos chestplate|bandos hilt|bandos boots)"
+    category = "bandos uniques"
+
+[[resource_pattern]]
+    pattern = "(archers ring|seers ring|warriors ring|berserker ring)"
+    category = "dks rings"
+
+[[resource_pattern]]
     pattern = "(grimy )?(guam|marrentill|tarromin|harralander|ranarr|toadflax|irit|avantoe|kwuarm|snapdragon|cadantine|lantadyme|dwarf weed|torstol)"
     category = "herbs"
 
 [[resource_pattern]]
-    pattern = "(uncut )?(sapphire|emerald|ruby|diamond|dragonstone|onyx)"
+    pattern = "(tanzanite fang|magic fang|serpentine visage|uncut onyx)"
+    category = "zulrah uniques"
+
+[[resource_pattern]]
+    pattern = "(uncut )?(sapphire|emerald|ruby|diamond|dragonstone)"
     category = "gems"
 
+[[resource_pattern]]
+    pattern = "(arcane prayer scroll|dexterous prayer scroll|twisted buckler|dragon hunter crossbow|dinh's bulwark|ancestral hat|ancestral robe top|ancestral robe bottom|dragon claws|elder maul|kodai insignia|twisted bow)"
+    category = "cox purple"
+
+[[resource_pattern]]
+    pattern = "(masori mask|masori body|masori chaps|lightbearer|osmumten's fang|elidinis' ward|tumeken's shadow)"
+    category = "toa purple"
+
+[[resource_pattern]]
+    pattern = "(primordial crysal|pegasian crystal|eternal crystal)"
+    category = "cerb crystals"
+
+[[resource_pattern]]
+    pattern = "(voidwaker hilt|voidwaker gem|voidwaker blade)"
+    category = "voidwaker pieces"
+
+[[resource_pattern]]
+    pattern = "(saradomin sword|saradomin hilt|saradomin's light|armadyl crossbow)"
+    category = "sara uniques"
+
+[[resource_pattern]]
+    pattern = "(steam battlestaff|zamorakian spear|zamorak hilt|staff of the dead)"
+    category = "zammy uniques"
+
+[[resource_pattern]]
+    pattern = "(armadyl chainskirt|armadyl chestplate|armadyl helmet|armadyl hilt)"
+    category = "arma uniques"
+
+[[resource_pattern]]
+    pattern = "godsword shard [1-3]"
+    category = "godsword shards"
+
+[[resource_pattern]]
+    pattern = "(crystal weapon seed|crystal armor seed|enhanced crystal weapon seed)"
+    category = "gauntlet seeds"
+
+[[resource_pattern]]
+    pattern = "(noxious pommel|noxious point|noxious blade|araxyte fang|jar of venom)"
+    category = "araxxor uniques"
+
+[[resource_pattern]]
+    pattern = "(tormented synapse|burning claw)"
+    category = "tormented demon uniques"
+
+[[resource_pattern]]
+    pattern = "(sunfire fanatic helm|sunfire fanatic cuirass|sunfire fanatic chausses|tonalztics of ralos|echo crystal)"
+    category = "colosseum uniques"
+
+[[resource_pattern]]
+    pattern = "(leaf-bladed battleaxe|leaf-bladed sword)"
+    category = "leaf-bladed items"
 
 [[resource_pattern]]
     pattern = ".*"    # catchall, must be last

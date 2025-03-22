@@ -13,37 +13,40 @@
     # Format: [level, "resource_name", amount]
     upgrade_costs = [
         # Level 2
-        [2, "bones", 1],
-        # [2, "coins", 10],
+        [2, "$category:bones", 500],
+        [2, "coins", 100000],
         # Level 3
+        [3, "$category:dks rings", 10],
         [3, "bones", 10],
         # Level 4
-        [4, "wood", 500],
+        [4, "zenyte shard", 500],
         [4, "stone", 300],
         [4, "iron", 100],
         # Level 5
-        [5, "wood", 1000],
         [5, "stone", 750],
+        [5, "$category:bandos uniques", 10],
         [5, "iron", 250],
         [5, "crystal", 10],
         # Level 6
-        [6, "wood", 2000],
+        [6, "$category:cerb crystals", 2000],
         [6, "stone", 1500],
         [6, "iron", 500],
         [6, "crystal", 30],
         # Level 7
         [7, "wood", 4000],
+        [7, "$category:zulrah uniques", 8000],
         [7, "stone", 3000],
         [7, "iron", 1000],
         [7, "crystal", 75],
         # Level 8
-        [8, "wood", 8000],
+        [8, "$category:toa purple", 2500],
+        [8, "$category:araxxor uniques", 8000],
         [8, "stone", 6000],
-        [8, "iron", 2500],
+        [8, "stone", 6000],
         [8, "crystal", 150],
         [8, "ancient_core", 1],
         # Level 9
-        [9, "wood", 16000],
+        [9, "$category:cox purple", 16000],
         [9, "stone", 12000],
         [9, "iron", 5000],
         [9, "crystal", 300],
@@ -60,22 +63,46 @@
 
     # Upgrade requirements for Armory by level
     upgrade_costs = [
-        [1, "bones", 1],
+
         # Level 2
-        [2, "$category:herbs", 12],
+        [2, "coins", 10000],
+        [2, "category:ores", 250],
+        [2, "category:runes", 500],
+        [2, "bracelet of ethereum", 500],
         # Level 3
-        [3, "bones", 1],
+        [3, "$category:herbs", 250],
+        [3, "coins", 25000],
+        [3, "$category:seeds", 1000],
         # Level 4
-        [4, "coins", 1],
+        [4, "adamantite bar", 500],
+        [4, "coins", 100000],
+        [4, "$category:gems", 500],
         # Level 5
         [5, "coins", 5],
+        [5, "coins", 5],
+        [5, "coins", 5],
+        [5, "coins", 5],
         # Level 6
+        [6, "$category:colosseum uniques", 10],
+        [6, "coins", 1000000],
+        [6, "coins", 10],
         [6, "coins", 10],
         # Level 7
-        [7, "coins", 20],
+        [7, "$category:godsword shards", 20],
+        [7, "$category:arma uniques", 20],
+        [7, "coins", 2500000],
+        [7, "$category:gems", 5000],
         # Level 8
         [8, "coins", 40],
+        [8, "coins", 40],
+        [8, "coins", 40],
+        [8, "coins", 40],
+        [8, "coins", 40],
         # Level 9
+        [9, "coins", 5000000],
+        [9, "coins", 80],
+        [9, "coins", 80],
+        [9, "coins", 80],
         [9, "coins", 80],
     ]
 
@@ -90,19 +117,39 @@
     upgrade_costs = [
         # Level 2
         [2, "bones", 1],
+        [2, "bones", 1],
         # Level 3
+        [3, "bones", 1],
         [3, "bones", 1],
         # Level 4
         [4, "coins", 1],
+        [4, "coins", 1],
+        [4, "coins", 1],
         # Level 5
+        [5, "adamant javelin", 1000],
+        [5, "coins", 5],
         [5, "coins", 5],
         # Level 6
+        [6, "$category:tormented demon uniques", 10],
         [6, "coins", 10],
-        # Level 7
+        [6, "coins", 10],
+        [6, "coins", 10],
+        # Level 7 - sire
+        [7, "$category:voidwaker pieces", 20],
+        [7, "coins", 20],
+        [7, "coins", 20],
         [7, "coins", 20],
         # Level 8
         [8, "coins", 40],
+        [8, "coins", 40],
+        [8, "coins", 40],
+        [8, "coins", 40],
+        [8, "coins", 40],
         # Level 9
+        [9, "coins", 80],
+        [9, "coins", 80],
+        [9, "coins", 80],
+        [9, "coins", 80],
         [9, "coins", 80],
     ]
 
@@ -117,21 +164,44 @@
     # Upgrade requirements for Treasury by level
     upgrade_costs = [
         [1, "bones", 1],
+        [1, "bones", 1],
+        [1, "bones", 1],
         # Level 2
+        [2, "bones", 1],
+        [2, "bones", 1],
         [2, "bones", 1],
         # Level 3
         [3, "bones", 1],
+        [3, "bones", 1],
+        [3, "bones", 1],
         # Level 4
+        [4, "coins", 1],
+        [4, "coins", 1],
+        [4, "coins", 1],
         [4, "coins", 1],
         # Level 5
         [5, "coins", 5],
+        [5, "coins", 5],
+        [5, "coins", 5],
+        [5, "coins", 5],
         # Level 6
+        [6, "coins", 10],
+        [6, "coins", 10],
+        [6, "coins", 10],
+        [6, "coins", 10],
         [6, "coins", 10],
         # Level 7
         [7, "coins", 20],
+        [7, "coins", 20],
+        [7, "coins", 20],
         # Level 8
         [8, "coins", 40],
+        [8, "coins", 40],
+        [8, "coins", 40],
+        [8, "coins", 40],
         # Level 9
+        [9, "vial of blood", 80],
+        [9, "coins", 80],
         [9, "coins", 80],
     ]
 
@@ -176,48 +246,6 @@
         [9, "crystal", 60],
         [9, "ancient_core", 1],
     ]
-
-    # # Fishmonger's Shop - For enhancing fishing resources
-    # [assets.fishmonger_shop]
-    #     name = "Fishmonger's Shop"
-    #     description = "Increases fishing efficiency and provides access to rare fishing spots. Higher levels unlock better fish preservation methods."
-    #     starting_level = 1
-    #     max_level = 9
-    #     icon = "🎣"
-
-    #     # Upgrade requirements for Fishmonger's Shop by level
-    #     upgrade_costs = [
-    #         [1, "bones", 1],
-    #         # Level 2
-    #         [2, "bones", 2],
-    #         [2, "raw_fish", 10],
-    #         # Level 3
-    #         [3, "bones", 5],
-    #         [3, "raw_fish", 50],
-    #         # Level 4
-    #         [4, "coins", 5],
-    #         [4, "raw_fish", 150],
-    #         # Level 5
-    #         [5, "coins", 10],
-    #         [5, "raw_fish", 300],
-    #         # Level 6
-    #         [6, "coins", 20],
-    #         [6, "raw_fish", 600],
-    #         [6, "crystal", 5],
-    #         # Level 7
-    #         [7, "coins", 40],
-    #         [7, "raw_fish", 1200],
-    #         [7, "crystal", 15],
-    #         # Level 8
-    #         [8, "coins", 80],
-    #         [8, "raw_fish", 2400],
-    #         [8, "crystal", 30],
-    #         # Level 9
-    #         [9, "coins", 160],
-    #         [9, "raw_fish", 4800],
-    #         [9, "crystal", 60],
-    #         [9, "ancient_core", 1],
-    #     ]
 
 # Herbalist's Hut - For enhancing herblore resources
 [assets.herbalist_hut]
@@ -313,30 +341,40 @@
 
     # Upgrade requirements for Farming Guild by level
     upgrade_costs = [
-        [1, "bones", 1],
+        [1, "bones", 50],
         # Level 2
-        [2, "bones", 2],
-        [2, "seeds", 10],
+        [2, "$category:herbs", 100],
+        [2, "$category:coins", 25000],
         # Level 3
         [3, "bones", 5],
+        [3, "seeds", 50],
         [3, "seeds", 50],
         # Level 4
         [4, "coins", 5],
         [4, "seeds", 150],
+        [4, "seeds", 150],
         # Level 5
         [5, "coins", 10],
-        [5, "seeds", 300],
+        [4, "seeds", 150],
+        [4, "seeds", 150],
         # Level 6
         [6, "coins", 20],
+        [6, "seeds", 600],
         [6, "seeds", 600],
         # Level 7
         [7, "coins", 40],
         [7, "seeds", 1200],
+        [7, "seeds", 1200],
+        [7, "seeds", 1200],
         # Level 8
         [8, "coins", 80],
         [8, "seeds", 2400],
+        [8, "seeds", 2400],
+        [8, "seeds", 2400],
         # Level 9
         [9, "coins", 160],
+        [9, "seeds", 4800],
+        [9, "seeds", 4800],
         [9, "seeds", 4800],
     ]
 
@@ -377,6 +415,8 @@
         [8, "gems", 30],
         # Level 9
         [9, "coins", 160],
+        [9, "coins", 160],
+        [9, "coins", 160],
     ]
 
 # Crafting Guild - For enhancing crafting resources
@@ -390,21 +430,36 @@
     # Upgrade requirements for Slayer Master by level
     upgrade_costs = [
         [1, "gems", 1],
+        [1, "gems", 1],
         # Level 2
+        [2, "gems", 1],
         [2, "gems", 1],
         # Level 3
         [3, "gems", 1],
+        [3, "gems", 1],
         # Level 4
+        [4, "gems", 1],
+        [4, "gems", 1],
         [4, "gems", 1],
         # Level 5
         [5, "gems", 5],
+        [5, "gems", 5],
+        [5, "gems", 5],
         # Level 6
+        [6, "gems", 10],
+        [6, "gems", 10],
         [6, "gems", 10],
         # Level 7
         [7, "gems", 20],
+        [7, "gems", 20],
+        [7, "gems", 20],
         # Level 8
         [8, "gems", 40],
+        [8, "gems", 40],
+        [8, "gems", 40],
         # Level 9
+        [9, "gems", 80],
+        [9, "gems", 80],
         [9, "gems", 80],
     ]
 
@@ -412,19 +467,25 @@
     name = "Garrisons"
     description = "Allows you to access drops from raids."
     starting_level = 1
-    max_level = 4
+    max_level = 5
     icon = "🏯"
 
     # Upgrade requirements for Garrisons by level
     upgrade_costs = [
-        [1, "bones", 1],
-        # Level 2
-        [2, "bones", 2],
+        # Level 2 - colosseum
+        [2, "$category:leaf-bladed items", 3],
         [2, "coins", 10],
-        # Level 3
+        # Level 3 - toa
         [3, "bones", 5],
-        [3, "coins", 50],
-        # Level 4
+        [3, "unsired", 2],
+        [3, "sarachnis cudgel", 50],
+        # Level 4 - cox
         [4, "bones", 10],
         [4, "coins", 100],
+        [4, "coins", 100],
+        [4, "coins", 100],
+        # Level 5 - tob
+        [5, "bones", 10],
+        [5, "coins", 100],
+        [5, "coins", 100],
     ]

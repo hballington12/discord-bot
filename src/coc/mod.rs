@@ -11,6 +11,8 @@ pub mod commands;
 pub mod database;
 pub mod patterns;
 
+pub const GLOB_MULT: f64 = 10.0;
+
 /// Internal struct for a team.
 pub struct Team {
     id: i32,

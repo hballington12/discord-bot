@@ -278,10 +278,11 @@ pub async fn get_buildings_embed(
         // Special handling for Garrisons (Raid Access)
         if building_key == "garrisons" {
             let raid_access = match building.level {
-                2 => "Access to: ToA",
-                3 => "Access to: ToA and CoX",
-                4 => "Access to: All raids",
-                _ => "No raid access",
+                2 => "Access to: Colosseum",
+                3 => "Access to: Colosseum, ToA",
+                4 => "Access to: Colosseum, ToA and CoX",
+                5 => "Access to: Colosseum + all raids",
+                _ => "No special content access",
             };
 
             building_entry.push_str(&format!("\n   ┗ **Raid Access**: {}\n", raid_access));
@@ -346,86 +347,121 @@ fn resource_category_display(category: &str) -> &str {
     }
 }
 
-pub async fn get_all_overview_embed(data: &Data) -> Result<Option<CreateEmbed>, Error> {
-    let town_config = &data.town_config;
-    let pool = &data.database;
+// ...existing code...
 
-    // Get all building types (distinct building names)
-    let buildings = sqlx::query!(
+pub async fn get_teams_townhall_levels(data: &Data) -> Result<Option<CreateEmbed>, Error> {
+    let pool = &data.database;
+    let town_config = &data.town_config;
+
+    // Query all teams and their town hall levels
+    let teams_data = sqlx::query!(
         r#"
-        SELECT DISTINCT building_name
-        FROM team_buildings
-        ORDER BY building_name ASC
+        SELECT 
+            t.id as "team_id: i32", 
+            t.name as team_name, 
+            tb.level as town_hall_level
+        FROM 
+            teams t
+        LEFT JOIN 
+            team_buildings tb ON t.id = tb.team_id
+        WHERE 
+            LOWER(tb.building_name) = 'townhall' 
+            OR LOWER(tb.building_name) = 'town_hall'
+        ORDER BY 
+            tb.level DESC, 
+            t.name ASC
         "#
     )
     .fetch_all(pool)
     .await?;
 
-    if buildings.is_empty() {
-        println!("No buildings found");
-        return Ok(None);
-    }
+    // Get the maximum town hall level from config for reference
+    let max_townhall_level = town_config
+        .assets
+        .get("townhall")
+        .or_else(|| town_config.assets.get("town_hall"))
+        .map(|config| config.max_level)
+        .unwrap_or(10); // Default to 10 if not found
 
-    // Order buildings with Town Hall first, then alphabetically
-    let mut ordered_buildings = buildings
-        .iter()
-        .map(|b| b.building_name.clone())
-        .collect::<Vec<String>>();
+    // Create the embed
+    let mut embed = serenity::builder::CreateEmbed::new()
+        .title("🏰 Team Town Hall Levels")
+        .description(format!(
+            "Overview of all teams' town hall progression. Maximum level: **{}**",
+            max_townhall_level
+        ))
+        .footer(serenity::builder::CreateEmbedFooter::new(format!(
+            "Total teams: {} • Updated: {}",
+            teams_data.len(),
+            chrono::Local::now().format("%d %b %Y %H:%M")
+        )))
+        .color(0x3498db) // Nice blue color
+        .timestamp(serenity::model::Timestamp::now());
 
-    // Put townhall at the beginning if it exists
-    if let Some(pos) = ordered_buildings
-        .iter()
-        .position(|name| name.to_lowercase() == "townhall" || name.to_lowercase() == "town_hall")
-    {
-        let townhall = ordered_buildings.remove(pos);
-        ordered_buildings.insert(0, townhall);
-    }
+    // Create a nicely formatted table for the teams
+    let mut table = "```\n".to_string();
+    table.push_str("📊 Rank | 🏷️ Team Name      | 🏰 Level | 📈 Progress\n");
+    table.push_str("--------|-------------------|----------|------------\n");
 
-    // Create a list of buildings and their abbreviations
-    let mut building_legend = String::new();
-    building_legend.push_str("**Building Abbreviations:**\n");
+    // Add teams to the table
+    for (index, team) in teams_data.iter().enumerate() {
+        let rank = index + 1;
+        let team_name = &team.team_name;
+        let th_level = team.town_hall_level.expect("Town Hall level is null");
 
-    for building in &ordered_buildings {
-        let building_key = building.to_lowercase();
-        let building_config = town_config.assets.get(&building_key);
-
-        // Get display name and icon
-        let (display_name, icon) = match building_config {
-            Some(config) => (config.name.clone(), config.icon.clone()),
-            None => (building.clone(), String::new()),
+        // Calculate progress percentage and create progress bar
+        let percentage = (th_level as f64 / max_townhall_level as f64 * 100.0).min(100.0);
+        let progress_bar = if th_level as u32 >= max_townhall_level {
+            "🌟 MAXED".to_string()
+        } else {
+            let filled = (percentage / 10.0).round() as usize;
+            let unfilled = 10 - filled;
+            format!("{}{}", "█".repeat(filled), "░".repeat(unfilled))
         };
 
-        // Special case for Town Hall
-        if building_key == "townhall" || building_key == "town_hall" {
-            building_legend.push_str(&format!(
-                "{} **TH** - {}\n",
-                if icon.is_empty() { "🏢" } else { &icon },
-                display_name
-            ));
-            continue;
-        }
+        // Format the rank with trophy/medal emoji for top 3
+        let rank_display = match rank {
+            1 => "#1🥇",
+            2 => "#2🥈",
+            3 => "#3🥉",
+            _ => &format!("#{}     ", rank),
+        };
 
-        // For other buildings, use the first letter capitalized
-        let abbr = building_key
-            .chars()
-            .next()
-            .map(|c| c.to_uppercase().collect::<String>())
-            .unwrap_or_else(|| "?".to_string());
+        // Format name (truncate if too long)
+        let name_display = if team_name.len() > 17 {
+            format!("{}...", &team_name[0..14])
+        } else {
+            team_name.clone()
+        };
 
-        building_legend.push_str(&format!(
-            "{} **{}** - {}\n",
-            if icon.is_empty() { "🏢" } else { &icon },
-            abbr,
-            display_name
+        // Add the row to the table
+        table.push_str(&format!(
+            "{:<6} | {:<17} | {:<8} | {}\n",
+            rank_display,
+            name_display,
+            format!("{}/{}", th_level, max_townhall_level),
+            progress_bar
         ));
     }
 
-    // Create the embed with the building legend
-    let embed = serenity::builder::CreateEmbed::new()
-        .title("🏢 Building Overview")
-        .description("Legend for building abbreviations used in team overviews")
-        .field("Building Legend", building_legend, false)
-        .timestamp(serenity::model::Timestamp::now());
+    table.push_str("```");
+
+    // Handle case with no teams
+    if teams_data.is_empty() {
+        table = "```\nNo teams with town halls found.\n```".to_string();
+    }
+
+    // Add the table to the embed
+    embed = embed.field("Town Hall Rankings", table, false);
+
+    // Add some helpful context in a separate field
+    embed = embed.field(
+        "💡 About Town Halls", 
+        "Town Hall level determines the maximum level of other buildings and unlocks new construction options.\n\
+        Upgrading your Town Hall should be a team priority to access higher-tier content and bonuses.",
+        false
+    );
 
     Ok(Some(embed))
 }
+// ...existing code...

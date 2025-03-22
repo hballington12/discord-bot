@@ -88,6 +88,8 @@ async fn main() {
             coc::commands::helper::lookup_resource(),
             coc::commands::helper::lookup_category(),
             coc::commands::buildings_overview(),
+            coc::commands::force_upgrade_building(),
+            coc::commands::force_insert_resource(),
             commands::simple_embed(),
             commands::edit_embed(),
         ],

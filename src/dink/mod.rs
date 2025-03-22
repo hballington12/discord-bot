@@ -100,23 +100,27 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
         }
     };
 
+    // println!("getting combat level");
     // Check if the source has a valid combat level
     match data.bestiary.get_combat_level(&drop.source) {
         Some(level) => {
             let source_combat_level = level as i32;
+            // println!(
+            //     "Combat level for source '{}': {}",
+            //     drop.source, source_combat_level
+            // );
 
-            //// TEMPORARY DISABLE
-            // // Check if team has access to monsters of this combat level
-            // if !get_team_armory_level(pool, source_combat_level, team.0)
-            //     .await?
-            //     .unwrap_or(false)
-            // {
-            //     println!(
-            //         "Team '{}' doesn't have access to combat level {} monsters",
-            //         team.1, source_combat_level
-            //     );
-            //     return Ok(());
-            // }
+            // Check if team has access to monsters of this combat level
+            if !get_team_armory_level(pool, source_combat_level, team.0)
+                .await?
+                .unwrap_or(false)
+            {
+                println!(
+                    "Team '{}' doesn't have access to combat level {} monsters",
+                    team.1, source_combat_level
+                );
+                return Ok(());
+            }
 
             match data.bestiary.get_slayer_level(&drop.source) {
                 Some(level) => {
@@ -138,6 +142,7 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
             }
         }
         None => {
+            println!("No combat level found for source '{}'", drop.source);
             // retrieve the teams garrisons level
             let garrisons_level =
                 database::get_team_building_level(pool, team.0, "garrisons").await?;
@@ -150,18 +155,23 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
 
             // check the different patterns and return early if garrisons level is not met
             // first check toms of amascut
-            if drop.source.to_lowercase() == "tombs of amascut" {
+            if drop.source.to_lowercase() == "fortis colosseum" {
                 if garrisons_level < 2 {
+                    println!("Team '{}' doesn't have access to Fortis Colosseum", team.1);
+                    return Ok(());
+                }
+            } else if drop.source.to_lowercase() == "tombs of amascut" {
+                if garrisons_level < 3 {
                     println!("Team '{}' doesn't have access to Tombs of Amascut", team.1);
                     return Ok(());
                 }
             } else if drop.source.to_lowercase() == "chambers of xeric" {
-                if garrisons_level < 3 {
+                if garrisons_level < 4 {
                     println!("Team '{}' doesn't have access to Chambers of Xeric", team.1);
                     return Ok(());
                 }
             } else if drop.source.to_lowercase() == "theatre of blood" {
-                if garrisons_level < 4 {
+                if garrisons_level < 5 {
                     println!("Team '{}' doesn't have access to Theatre of Blood", team.1);
                     return Ok(());
                 }
@@ -198,7 +208,7 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
 
         // Check if this resource already exists for the team
         let existing_resource = get_resource_quantity_by_name(pool, team.0, &item_name).await?;
-        println!("Existing resource: {:?}", existing_resource);
+        // println!("Existing resource: {:?}", existing_resource);
 
         match existing_resource {
             Some(resource) => {

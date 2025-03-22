@@ -1,4 +1,4 @@
-use crate::Error;
+use crate::{coc::GLOB_MULT, Error};
 use sqlx::SqlitePool;
 
 pub async fn get_user_team(
@@ -482,6 +482,34 @@ pub async fn mark_embed_as_deleted(pool: &SqlitePool, embed_id: i32) -> Result<(
     Ok(())
 }
 
+/// Get the team handicap multiplier based on the number of players in the team
+/// Returns a multiplier value to help balance gameplay for different team sizes
+pub async fn get_team_handicap_multiplier(pool: &SqlitePool, team_id: i32) -> Result<f64, Error> {
+    // Count the number of players in the team
+    let result = sqlx::query!(
+        r#"
+        SELECT COUNT(*) as "count: i32" 
+        FROM team_members
+        WHERE team_id = ?
+        "#,
+        team_id
+    )
+    .fetch_one(pool)
+    .await?;
+
+    let team_size = result.count;
+
+    // Determine handicap multiplier based on team size
+    let multiplier = 6.0 / team_size as f64;
+
+    // println!(
+    //     "Team {} has {} players with handicap multiplier {}",
+    //     team_id, team_size, multiplier
+    // );
+
+    Ok(multiplier)
+}
+
 /// Get a team's multiplier for a specific resource category
 pub async fn get_team_resource_multiplier(
     pool: &SqlitePool,
@@ -531,17 +559,20 @@ pub async fn calculate_resource_total(
     team_id: i32,
     resource_category: &str,
 ) -> Result<i32, Error> {
-    let multiplier = get_team_resource_multiplier(pool, team_id, resource_category).await?;
+    let mult = get_team_resource_multiplier(pool, team_id, resource_category).await?;
     let flat_bonus = get_team_resource_flat_bonus(pool, team_id, resource_category).await?;
+    let handicap = get_team_handicap_multiplier(pool, team_id).await?;
+    let handicap = 1.0; // Disable handicap for now
 
     // Apply multiplier first, then add flat bonus: floor(base_amount * multiplier) + flat_bonus
-    let with_multiplier = (base_amount as f64 * multiplier).floor() as i32;
-    let total = with_multiplier + flat_bonus;
+    let base = base_amount as f64;
+    let flat = flat_bonus as f64;
 
     println!(
-        "Calculated resource total: {} * {} + {} = {}",
-        base_amount, multiplier, flat_bonus, total
+        "Resource calculation: base={}, mult={:.2}, flat={:.2}, handicap={:.2}, GLOB_MULT={:.2}, total={}",
+        base, mult, flat, handicap, GLOB_MULT, (((base * mult).floor() + flat) * handicap * GLOB_MULT).floor() as i32
     );
+    let total = (((base * mult).floor() + flat) * handicap * GLOB_MULT).ceil() as i32;
 
     Ok(total)
 }
@@ -570,4 +601,129 @@ pub async fn get_team_building_level(
         Some(row) => Ok(row.level),
         None => Ok(0), // Default level 0 means building doesn't exist
     }
+}
+
+pub async fn get_global_embed_by_variant(
+    pool: &sqlx::SqlitePool,
+    variant: &str,
+) -> Result<Option<(i64, i64, i64)>, Error> {
+    // Query to find a global embed by variant
+    let record = sqlx::query!(
+        r#"
+        SELECT id as "id: i64", channel_id as "channel_id: i64", message_id as "message_id: i64"
+        FROM global_embeds
+        WHERE variant = $1
+        "#,
+        variant
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    // Return tuple of (embed_id, channel_id, message_id) if found
+    Ok(record.map(|r| {
+        (
+            r.id.unwrap_or_default(),
+            r.channel_id,
+            r.message_id.unwrap_or_default(),
+        )
+    }))
+}
+
+pub async fn insert_global_embed(
+    pool: &sqlx::SqlitePool,
+    channel_id: i64,
+    variant: &str,
+    message_id: i64,
+) -> Result<i64, Error> {
+    // Insert a new global embed record
+    let result = sqlx::query!(
+        r#"
+        INSERT INTO global_embeds (channel_id, variant, message_id) 
+        VALUES ($1, $2, $3)
+        RETURNING id as "id: i64"
+        "#,
+        channel_id,
+        variant,
+        message_id
+    )
+    .fetch_one(pool)
+    .await?;
+
+    Ok(result.id.unwrap())
+}
+
+pub async fn update_global_embed(
+    pool: &sqlx::SqlitePool,
+    embed_id: i64,
+    channel_id: i64,
+    message_id: i64,
+) -> Result<(), Error> {
+    // Update an existing global embed record
+    sqlx::query!(
+        r#"
+        UPDATE global_embeds 
+        SET channel_id = $1, message_id = $2, last_updated_at = CURRENT_TIMESTAMP
+        WHERE id = $3
+        "#,
+        channel_id,
+        message_id,
+        embed_id
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+pub async fn mark_global_embed_as_deleted(
+    pool: &sqlx::SqlitePool,
+    embed_id: i64,
+) -> Result<(), Error> {
+    // Set message_id to NULL to indicate it's been deleted
+    sqlx::query!(
+        r#"
+        UPDATE global_embeds 
+        SET message_id = NULL, last_updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+        "#,
+        embed_id
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
+
+pub async fn get_all_global_embeds(
+    pool: &sqlx::SqlitePool,
+) -> Result<Vec<(i64, i64, i64, String)>, Error> {
+    // Get all global embeds
+    let records = sqlx::query!(
+        r#"
+        SELECT 
+            id as "id: i64", 
+            channel_id as "channel_id: i64", 
+            message_id as "message_id: i64", 
+            variant 
+        FROM global_embeds
+        WHERE message_id IS NOT NULL
+        "#
+    )
+    .fetch_all(pool)
+    .await?;
+
+    // Return vector of (embed_id, channel_id, message_id, variant)
+    let result = records
+        .into_iter()
+        .map(|r| {
+            (
+                r.id.unwrap_or_default(),
+                r.channel_id,
+                r.message_id.unwrap_or_default(),
+                r.variant,
+            )
+        })
+        .collect();
+
+    Ok(result)
 }

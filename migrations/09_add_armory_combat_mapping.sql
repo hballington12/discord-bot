@@ -8,11 +8,11 @@ CREATE TABLE armory_combat_mapping (
 -- Populate with sample data
 INSERT INTO armory_combat_mapping (armory_level, max_combat_level) VALUES
 (1, 10),
-(2, 25),
-(3, 50),
-(4, 100),
-(5, 125),
-(6, 175),
-(7, 225),
-(8, 350),
+(2, 100),
+(3, 200),
+(4, 300),
+(5, 400),
+(6, 500),
+(7, 600),
+(8, 700),
 (9, 9999);

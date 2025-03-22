@@ -1,5 +1,14 @@
-use crate::coc::get_team;
-use crate::{Context, Data, Error};
+use crate::{
+    coc::{
+        self,
+        database::{
+            get_resource_quantity_by_name, get_team_by_name, insert_new_resource,
+            update_resource_quantity,
+        },
+        get_team,
+    },
+    Context, Data, Error,
+};
 
 use ::serenity::all::CreateEmbed;
 use poise::serenity_prelude as serenity;
@@ -8,7 +17,12 @@ mod embed;
 pub mod helper;
 
 /// Lists all teams in the database
-#[poise::command(slash_command, prefix_command, guild_only)]
+#[poise::command(
+    slash_command,
+    prefix_command,
+    guild_only,
+    required_permissions = "MANAGE_MESSAGES | MANAGE_THREADS"
+)]
 pub async fn list_teams(ctx: Context<'_>) -> Result<(), Error> {
     // Get database connection from context data
     let pool = &ctx.data().database;
@@ -49,7 +63,7 @@ pub async fn list_teams(ctx: Context<'_>) -> Result<(), Error> {
 }
 
 /// Creates a new team in the database
-#[poise::command(slash_command, prefix_command, guild_only)]
+#[poise::command(slash_command, prefix_command, guild_only, owners_only)]
 pub async fn add_team(
     ctx: Context<'_>,
     #[description = "Name of the team to create"] team_name: String,
@@ -117,7 +131,7 @@ pub async fn add_team(
 }
 
 /// Deletes a team from the database by name
-#[poise::command(slash_command, prefix_command, guild_only)]
+#[poise::command(slash_command, prefix_command, guild_only, owners_only)]
 pub async fn remove_team(
     ctx: Context<'_>,
     #[description = "Name of the team to delete"] team_name: String,
@@ -156,7 +170,7 @@ pub async fn remove_team(
 }
 
 /// Adds a player to a team
-#[poise::command(slash_command, prefix_command, guild_only)]
+#[poise::command(slash_command, prefix_command, guild_only, owners_only)]
 pub async fn add_player(
     ctx: Context<'_>,
     #[description = "Username of the player"] username: String,
@@ -215,7 +229,7 @@ pub async fn add_player(
 }
 
 /// Removes a player from all teams
-#[poise::command(slash_command, prefix_command, guild_only)]
+#[poise::command(slash_command, prefix_command, guild_only, owners_only)]
 pub async fn remove_player(
     ctx: Context<'_>,
     #[description = "Username of the player to remove"] username: String,
@@ -257,7 +271,7 @@ pub async fn remove_player(
 }
 
 /// Creates an embed message with team resources
-#[poise::command(slash_command, prefix_command)]
+#[poise::command(slash_command, prefix_command, owners_only)]
 pub async fn create_resource_embed(
     ctx: Context<'_>,
     #[description = "Name of the team"] team_name: String,
@@ -342,7 +356,7 @@ pub async fn create_resource_embed(
 }
 
 /// Lists all resources for a specific team
-#[poise::command(slash_command, prefix_command, guild_only)]
+#[poise::command(slash_command, prefix_command, guild_only, owners_only)]
 pub async fn list_team_resources(
     ctx: Context<'_>,
     #[description = "Name of the team"] team_name: String,
@@ -408,7 +422,7 @@ pub async fn update_team_embeds(
     data: &Data,
     team_name: &str,
 ) -> Result<(usize, Vec<String>), Error> {
-    println!("Updating team embeds for team '{}'", team_name);
+    // println!("Updating team embeds for team '{}'", team_name);
 
     // Get database connection from context data
     let pool = &data.database;
@@ -456,7 +470,7 @@ pub async fn update_team_embeds(
             }
             "resources" => {
                 // For resources variant, use the resource embed
-                println!("Getting resources embed");
+                // println!("Getting resources embed");
                 team.make_resource_embed()
             }
             unknown => {
@@ -503,6 +517,276 @@ pub async fn update_team_embeds(
     }
 
     Ok((updated_count, results))
+}
+
+/// Admin Command to Force Insert a resource for a team
+#[poise::command(slash_command, prefix_command, guild_only, owners_only)]
+pub async fn force_insert_resource(
+    ctx: Context<'_>,
+    #[description = "Name of the team"] team_name: String,
+    #[description = "Name of the resource to insert"] resource_name: String,
+    #[description = "Amount of the resource to insert"] quantity: i64,
+) -> Result<(), Error> {
+    // Get database connection from context data
+    let pool = &ctx.data().database;
+    let patterns = &ctx.data().res_patterns.resource_pattern;
+
+    // Convert inputs to lowercase for consistent lookups
+    let team_name = team_name.to_lowercase();
+    let item_name = resource_name.to_lowercase();
+
+    // Check if the team exists
+    let team_id = match crate::coc::database::get_team_by_name(pool, &team_name).await? {
+        Some(id) => id,
+        None => {
+            ctx.send(
+                poise::CreateReply::default()
+                    .content(format!("No team found with name '{}'", team_name))
+                    .ephemeral(true),
+            )
+            .await?;
+            return Ok(());
+        }
+    };
+
+    // Check if item matches resource pattern
+    let result = coc::patterns::matches_pattern(&item_name, patterns);
+
+    // Skip this item if it doesn't match any resource pattern
+    if !result {
+        ctx.send(
+            poise::CreateReply::default()
+                .content(format!(
+                    "Resource '{}' does not match any known resource pattern",
+                    item_name
+                ))
+                .ephemeral(true),
+        )
+        .await?;
+        return Ok(());
+    }
+
+    // get the category for the item
+    let category = coc::patterns::get_resource_category(&item_name, patterns);
+
+    println!("Item match found with category: {}", category);
+    // get the modified resource amount
+    let quantity =
+        coc::database::calculate_resource_total(pool, quantity as i32, team_id, &category).await?;
+
+    // Check if this resource already exists for the team
+    let existing_resource = get_resource_quantity_by_name(pool, team_id, &item_name).await?;
+    // println!("Existing resource: {:?}", existing_resource);
+
+    match existing_resource {
+        Some(resource) => {
+            // Update quantity of existing resource
+            let new_quantity = resource + quantity as i64;
+            update_resource_quantity(pool, team_id, &item_name, new_quantity).await?;
+
+            println!(
+                "Updated resource quantity for team '{}': {} x {} (new total: {})",
+                team_name, item_name, quantity, new_quantity
+            );
+        }
+        None => {
+            // Insert new resource entry
+            insert_new_resource(pool, team_id, &item_name, &category, quantity as i64).await?;
+
+            println!(
+                "Added new resource for team '{}': {} x {}",
+                team_name, item_name, quantity
+            );
+        }
+    }
+
+    // also update any embed resource messages
+    let _ = update_team_embeds(ctx.serenity_context(), ctx.data(), &team_name).await?;
+
+    ctx.send(
+        poise::CreateReply::default()
+            .content(format!("Inserted resource successfully."))
+            .ephemeral(true),
+    )
+    .await?;
+
+    Ok(())
+}
+
+/// Admin Command to Force Upgrade a building for a team
+#[poise::command(slash_command, prefix_command, guild_only, owners_only)]
+pub async fn force_upgrade_building(
+    ctx: Context<'_>,
+    #[description = "Name of the team"] team_name: String,
+    #[description = "Name of the building to upgrade"] building_name: String,
+) -> Result<(), Error> {
+    // Get database connection and configs from context data
+    let pool = &ctx.data().database;
+    let town_config = &ctx.data().town_config;
+
+    // Convert inputs to lowercase for consistent lookups
+    let team_name = team_name.to_lowercase();
+    let building_name = building_name.to_lowercase();
+
+    // Step 1: Check if the team exists
+    let team = sqlx::query!(
+        r#"
+        SELECT id as "id: Option<i32>" FROM teams WHERE name = $1
+        "#,
+        team_name
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    let team_id = match team {
+        Some(team) => team.id.ok_or_else(|| Error::from("Team ID is null"))?,
+        None => {
+            ctx.send(
+                poise::CreateReply::default()
+                    .content(format!("No team found with name '{}'", team_name))
+                    .ephemeral(true),
+            )
+            .await?;
+            return Ok(());
+        }
+    };
+
+    // Step 2: Check if the building exists in the configuration
+    if !town_config.assets.contains_key(&building_name) {
+        ctx.send(
+            poise::CreateReply::default()
+                .content(format!(
+                    "Building '{}' does not exist in the configuration. Available buildings: {}",
+                    building_name,
+                    town_config.get_building_types().join(", ")
+                ))
+                .ephemeral(true),
+        )
+        .await?;
+        return Ok(());
+    }
+
+    // Step 3: Check if the team has this building and get its current level
+    let building = sqlx::query!(
+        r#"
+        SELECT id as "id: Option<i32>", level FROM team_buildings 
+        WHERE team_id = $1 AND building_name = $2
+        "#,
+        team_id,
+        building_name
+    )
+    .fetch_optional(pool)
+    .await?;
+
+    let (building_id, current_level) = match building {
+        Some(building) => (
+            building
+                .id
+                .ok_or_else(|| Error::from("Building ID is null"))?,
+            building.level,
+        ),
+        None => {
+            ctx.send(
+                poise::CreateReply::default()
+                    .content(format!(
+                        "Team '{}' doesn't have a '{}' building. Please check the building name.",
+                        team_name, building_name
+                    ))
+                    .ephemeral(true),
+            )
+            .await?;
+            return Ok(());
+        }
+    };
+
+    // Step 4: Check if building is at max level
+    let building_config = &town_config.assets[&building_name];
+    if current_level as u32 >= building_config.max_level {
+        ctx.send(
+            poise::CreateReply::default()
+                .content(format!(
+                    "Building '{}' is already at its maximum level ({})!",
+                    building_name, current_level
+                ))
+                .ephemeral(true),
+        )
+        .await?;
+        return Ok(());
+    }
+
+    // Step 6: Get upgrade costs using the new enum-based system
+    let target_level = current_level + 1;
+
+    // Step 9: Begin transaction to update resources and building level
+    let mut tx = pool.begin().await?;
+
+    // Upgrade the building
+    sqlx::query!(
+        r#"
+        UPDATE team_buildings
+        SET level = level + 1
+        WHERE id = $1
+        "#,
+        building_id
+    )
+    .execute(&mut *tx)
+    .await?;
+
+    // Commit the transaction
+    tx.commit().await?;
+
+    // Step 10: Send success message (public announcement)
+    let building_display_name = building_config.name.clone();
+    let icon = if !building_config.icon.is_empty() {
+        format!("{} ", building_config.icon)
+    } else {
+        String::new()
+    };
+
+    ctx.say(format!(
+        "{}**{}** upgraded to level **{}** for team **{}**!\n\n**Resources used:**\n None.",
+        icon, building_display_name, target_level, team_name
+    ))
+    .await?;
+
+    // Step 11: Update any team embeds
+    if let Ok((count, _)) =
+        update_team_embeds(&ctx.serenity_context(), &ctx.data(), &team_name).await
+    {
+        if count > 0 {
+            ctx.send(
+                poise::CreateReply::default()
+                    .content(format!(
+                        "Updated {} team embeds with the new information.",
+                        count
+                    ))
+                    .ephemeral(true),
+            )
+            .await?;
+        }
+    }
+
+    // Step 12: Update global embeds if this was a town hall upgrade
+    if building_name == "townhall" || building_name == "town_hall" {
+        if let Ok((count, _)) = update_global_embeds(
+            &ctx.serenity_context(),
+            &ctx.data(),
+            Some("townhall_ranking"),
+        )
+        .await
+        {
+            if count > 0 {
+                ctx.send(
+                    poise::CreateReply::default()
+                        .content(format!("Updated {} global townhall ranking embeds.", count))
+                        .ephemeral(true),
+                )
+                .await?;
+            }
+        }
+    }
+
+    Ok(())
 }
 
 /// Upgrades a building for a team
@@ -827,11 +1111,31 @@ pub async fn upgrade_building(
         }
     }
 
+    // Step 12: Update global embeds if this was a town hall upgrade
+    if building_name == "townhall" || building_name == "town_hall" {
+        if let Ok((count, _)) = update_global_embeds(
+            &ctx.serenity_context(),
+            &ctx.data(),
+            Some("townhall_ranking"),
+        )
+        .await
+        {
+            if count > 0 {
+                ctx.send(
+                    poise::CreateReply::default()
+                        .content(format!("Updated {} global townhall ranking embeds.", count))
+                        .ephemeral(true),
+                )
+                .await?;
+            }
+        }
+    }
+
     Ok(())
 }
 
 /// Downgrades a building for a team
-#[poise::command(slash_command, prefix_command, guild_only)]
+#[poise::command(slash_command, prefix_command, guild_only, owners_only)]
 pub async fn downgrade_building(
     ctx: Context<'_>,
     #[description = "Name of the team"] team_name: String,
@@ -977,11 +1281,31 @@ pub async fn downgrade_building(
         }
     }
 
+    // Step 12: Update global embeds if this was a town hall upgrade
+    if building_name == "townhall" || building_name == "town_hall" {
+        if let Ok((count, _)) = update_global_embeds(
+            &ctx.serenity_context(),
+            &ctx.data(),
+            Some("townhall_ranking"),
+        )
+        .await
+        {
+            if count > 0 {
+                ctx.send(
+                    poise::CreateReply::default()
+                        .content(format!("Updated {} global townhall ranking embeds.", count))
+                        .ephemeral(true),
+                )
+                .await?;
+            }
+        }
+    }
+
     Ok(())
 }
 
 /// Creates an embed message showing team buildings and their levels
-#[poise::command(slash_command, prefix_command)]
+#[poise::command(slash_command, prefix_command, owners_only)]
 pub async fn create_buildings_embed(
     ctx: Context<'_>,
     #[description = "Name of the team"] team_name: String,
@@ -1081,13 +1405,14 @@ pub async fn create_buildings_embed(
 }
 
 /// Creates an overview embed showing all teams and their building levels
-#[poise::command(slash_command, prefix_command)]
+#[poise::command(slash_command, prefix_command, owners_only)]
 pub async fn buildings_overview(ctx: Context<'_>) -> Result<(), Error> {
     // Get data from context
     let data = ctx.data();
+    let pool = &data.database;
 
     // Get the overview embed
-    let overview_embed = match embed::get_all_overview_embed(data).await? {
+    let overview_embed = match embed::get_teams_townhall_levels(data).await? {
         Some(embed) => embed,
         None => {
             ctx.send(
@@ -1111,10 +1436,31 @@ pub async fn buildings_overview(ctx: Context<'_>) -> Result<(), Error> {
         .await;
 
     match msg_result {
-        Ok(_) => {
+        Ok(message) => {
+            // Record the embed in the global_embeds table
+            let channel_id = ctx.channel_id().get() as i64;
+            let message_id = message.id.get() as i64;
+            let variant = "townhall_ranking".to_string();
+
+            // Check if this variant already exists in global_embeds
+            let existing =
+                crate::coc::database::get_global_embed_by_variant(pool, &variant).await?;
+
+            if let Some((embed_id, _, _)) = existing {
+                println!("Updating existing global embed record");
+                // Update existing record
+                crate::coc::database::update_global_embed(pool, embed_id, channel_id, message_id)
+                    .await?;
+            } else {
+                println!("Inserting new global embed record");
+                // Insert a new global embed record
+                crate::coc::database::insert_global_embed(pool, channel_id, &variant, message_id)
+                    .await?;
+            }
+
             ctx.send(
                 poise::CreateReply::default()
-                    .content("Buildings overview has been created successfully!")
+                    .content("Buildings overview has been created and recorded successfully!")
                     .ephemeral(true),
             )
             .await?;
@@ -1131,4 +1477,114 @@ pub async fn buildings_overview(ctx: Context<'_>) -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+/// Updates all registered global embeds
+pub async fn update_global_embeds(
+    ctx: &serenity::Context,
+    data: &Data,
+    variant_filter: Option<&str>,
+) -> Result<(usize, Vec<String>), Error> {
+    println!(
+        "Updating global embeds{}",
+        variant_filter.map_or(String::new(), |v| format!(" for variant '{}'", v))
+    );
+
+    // Get database connection from context data
+    let pool = &data.database;
+
+    // Find all global embeds, possibly filtered by variant
+    let mut records = Vec::new();
+
+    if let Some(variant) = variant_filter {
+        // Filter by variant
+        if let Some((embed_id, channel_id, message_id)) =
+            crate::coc::database::get_global_embed_by_variant(pool, variant).await?
+        {
+            records.push((embed_id, channel_id, message_id, variant.to_string()));
+        }
+    } else {
+        // Get all global embeds
+        records = crate::coc::database::get_all_global_embeds(pool).await?;
+    }
+
+    if records.is_empty() {
+        return Ok((0, vec!["No global embeds found".to_string()]));
+    }
+
+    let mut updated_count = 0;
+    let mut results = Vec::new();
+
+    // Update each embed
+    for (embed_id, channel_id_int, message_id_int, variant) in records {
+        let channel_id = serenity::ChannelId::new(channel_id_int as u64);
+        let message_id = serenity::MessageId::new(message_id_int as u64);
+
+        // Choose embed based on variant
+        let embed = match variant.as_str() {
+            "townhall_ranking" => {
+                // For townhall ranking variant, use the townhall levels embed
+                match embed::get_teams_townhall_levels(data).await? {
+                    Some(th_embed) => th_embed,
+                    None => {
+                        results.push("Failed to generate townhall ranking embed".to_string());
+                        continue; // Skip to next embed
+                    }
+                }
+            }
+            "team_leaderboard" => {
+                // For team leaderboard variant (if you add this feature later)
+                // match embed::get_team_leaderboard(data).await? ...
+                results.push(format!("Unsupported embed variant: {}", variant));
+                continue; // Skip to next embed
+            }
+            "server_statistics" => {
+                // For server statistics variant (if you add this feature later)
+                // match embed::get_server_statistics(data).await? ...
+                results.push(format!("Unsupported embed variant: {}", variant));
+                continue; // Skip to next embed
+            }
+            unknown => {
+                results.push(format!("Unknown global embed variant: {}", unknown));
+                continue; // Skip to next embed
+            }
+        };
+
+        // Try to edit the message
+        let result = channel_id
+            .edit_message(
+                &ctx.http,
+                message_id,
+                serenity::builder::EditMessage::new().embed(embed),
+            )
+            .await;
+
+        match result {
+            Ok(_) => {
+                updated_count += 1;
+                results.push(format!(
+                    "Updated global {} embed in channel {}",
+                    variant, channel_id
+                ));
+            }
+            Err(err) => {
+                results.push(format!(
+                    "Failed to update global {} embed in channel {}: {}",
+                    variant, channel_id, err
+                ));
+
+                // If message was deleted, remove it from tracking
+                if err.to_string().contains("Unknown Message") {
+                    crate::coc::database::mark_global_embed_as_deleted(pool, embed_id).await?;
+
+                    results.push(format!(
+                        "Marked global message as deleted in database: {} embed in channel {}",
+                        variant, channel_id
+                    ));
+                }
+            }
+        }
+    }
+
+    Ok((updated_count, results))
 }
