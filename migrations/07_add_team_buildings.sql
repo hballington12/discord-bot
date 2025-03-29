@@ -31,10 +31,10 @@ FROM teams t
 JOIN team_buildings tb ON t.id = tb.team_id
 ORDER BY t.name, tb.building_name;
 
--- Add some seed data for common building types
-INSERT INTO team_buildings (team_id, building_name, level) VALUES
-    -- Team 1 Buildings
-    (0, 'Townhall', 1);
+-- -- Add some seed data for common building types
+-- INSERT INTO team_buildings (team_id, building_name, level) VALUES
+--     -- Team 1 Buildings
+--     (0, 'Townhall', 1);
 
 -- Create a trigger to update last_upgraded_at on changes
 CREATE TRIGGER update_team_buildings_upgrade_timestamp

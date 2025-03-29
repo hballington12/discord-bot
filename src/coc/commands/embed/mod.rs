@@ -455,14 +455,6 @@ pub async fn get_teams_townhall_levels(data: &Data) -> Result<Option<CreateEmbed
     // Add the table to the embed
     embed = embed.field("Town Hall Rankings", table, false);
 
-    // Add some helpful context in a separate field
-    embed = embed.field(
-        "💡 About Town Halls", 
-        "Town Hall level determines the maximum level of other buildings and unlocks new construction options.\n\
-        Upgrading your Town Hall should be a team priority to access higher-tier content and bonuses.",
-        false
-    );
-
     Ok(Some(embed))
 }
 // ...existing code...
