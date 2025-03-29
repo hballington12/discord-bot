@@ -155,23 +155,28 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
 
             // check the different patterns and return early if garrisons level is not met
             // first check toms of amascut
-            if drop.source.to_lowercase() == "fortis colosseum" {
+            if drop.source.to_lowercase() == "lunar chest" {
                 if garrisons_level < 2 {
+                    println!("Team '{}' doesn't have access to Lunar Chests", team.1);
+                    return Ok(());
+                }
+            } else if drop.source.to_lowercase() == "fortis colosseum" {
+                if garrisons_level < 3 {
                     println!("Team '{}' doesn't have access to Fortis Colosseum", team.1);
                     return Ok(());
                 }
             } else if drop.source.to_lowercase() == "tombs of amascut" {
-                if garrisons_level < 3 {
+                if garrisons_level < 4 {
                     println!("Team '{}' doesn't have access to Tombs of Amascut", team.1);
                     return Ok(());
                 }
             } else if drop.source.to_lowercase() == "chambers of xeric" {
-                if garrisons_level < 4 {
+                if garrisons_level < 5 {
                     println!("Team '{}' doesn't have access to Chambers of Xeric", team.1);
                     return Ok(());
                 }
             } else if drop.source.to_lowercase() == "theatre of blood" {
-                if garrisons_level < 5 {
+                if garrisons_level < 6 {
                     println!("Team '{}' doesn't have access to Theatre of Blood", team.1);
                     return Ok(());
                 }

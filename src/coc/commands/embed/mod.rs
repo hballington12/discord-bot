@@ -278,10 +278,11 @@ pub async fn get_buildings_embed(
         // Special handling for Garrisons (Raid Access)
         if building_key == "garrisons" {
             let raid_access = match building.level {
-                2 => "Access to: Colosseum",
-                3 => "Access to: Colosseum, ToA",
-                4 => "Access to: Colosseum, ToA and CoX",
-                5 => "Access to: Colosseum + all raids",
+                2 => "Access to: Lunar Chests",
+                3 => "Access to: Lunar Chests, Colosseum",
+                4 => "Access to: Lunar Chests, Colosseum, ToA",
+                5 => "Access to: Lunar Chests, Colosseum, ToA and CoX",
+                6 => "Access to: Lunar Chests, Colosseum + all raids",
                 _ => "No special content access",
             };
 

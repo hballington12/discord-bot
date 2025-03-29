@@ -649,7 +649,7 @@ pub async fn insert_global_embed(
     .fetch_one(pool)
     .await?;
 
-    Ok(result.id.unwrap())
+    Ok(result.id.unwrap_or_default())
 }
 
 pub async fn update_global_embed(

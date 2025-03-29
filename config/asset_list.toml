@@ -17,40 +17,41 @@
         [2, "coins", 100000],
         # Level 3
         [3, "$category:dks rings", 10],
-        [3, "bones", 10],
+        [3, "dragon plateskirt", 1],
         # Level 4
-        [4, "zenyte shard", 500],
+        [4, "zenyte shard", 4],
         [4, "stone", 300],
         [4, "iron", 100],
         # Level 5
-        [5, "stone", 750],
-        [5, "$category:bandos uniques", 10],
-        [5, "iron", 250],
-        [5, "crystal", 10],
+        [5, "kbd heads", 2],
+        [5, "$category:bandos uniques", 4],
+        [5, "runite ore", 200],
+        [5, "yew logs", 4000],
         # Level 6
         [6, "$category:cerb crystals", 2000],
-        [6, "stone", 1500],
-        [6, "iron", 500],
-        [6, "crystal", 30],
+        [6, "magic logs", 2500],
+        [6, "iron ore", 1000],
+        [6, "venator shard", 2],
         # Level 7
-        [7, "wood", 4000],
-        [7, "$category:zulrah uniques", 8000],
-        [7, "stone", 3000],
-        [7, "iron", 1000],
-        [7, "crystal", 75],
+        [7, "$category:zulrah uniques", 3],
+        [7, "$category:gems", 5000],
+        [7, "$category:seeds", 10000],
+        [7, "clay", 1000],
+        [7, "soul rune", 10000],
+        [7, "mithril ore", 2500],
         # Level 8
-        [8, "$category:toa purple", 2500],
-        [8, "$category:araxxor uniques", 8000],
-        [8, "stone", 6000],
-        [8, "stone", 6000],
+        [8, "$category:toa purple", 2],
+        [8, "$category:araxxor uniques", 5],
+        [8, "smoke battlestaff", 1],
+        [8, "bones", 5000],
         [8, "crystal", 150],
-        [8, "ancient_core", 1],
+        [8, "dragon axe", 3],
         # Level 9
-        [9, "$category:cox purple", 16000],
-        [9, "stone", 12000],
-        [9, "iron", 5000],
-        [9, "crystal", 300],
-        [9, "ancient_core", 3],
+        [9, "$category:cox purple", 2],
+        [9, "zammy uniques", 2],
+        [9, "$category:gems", 50000],
+        [9, "$category:ores", 100000],
+        [9, "$category:logs", 10000],
     ]
 
 # Armory - For weapon upgrades and team equipment
@@ -68,42 +69,41 @@
         [2, "coins", 10000],
         [2, "category:ores", 250],
         [2, "category:runes", 500],
-        [2, "bracelet of ethereum", 500],
+        [2, "bracelet of ethereum", 10],
         # Level 3
         [3, "$category:herbs", 250],
-        [3, "coins", 25000],
-        [3, "$category:seeds", 1000],
+        [3, "larran's key", 10],
+        [3, "$category:seeds", 500],
+        [3, "long bone", 1],
+        [3, "mole claw", 5],
         # Level 4
         [4, "adamantite bar", 500],
         [4, "coins", 100000],
         [4, "$category:gems", 500],
         # Level 5
-        [5, "coins", 5],
-        [5, "coins", 5],
-        [5, "coins", 5],
-        [5, "coins", 5],
+        [5, "yew seed", 10],
+        [5, "brimstone key", 25],
+        [5, "ballista spring", 1],
+        [5, "cheese", 1],
         # Level 6
-        [6, "$category:colosseum uniques", 10],
-        [6, "coins", 1000000],
-        [6, "coins", 10],
-        [6, "coins", 10],
+        [6, "$category:colosseum uniques", 1],
+        [6, "coins", 100000],
+        [6, "kurask head", 1],
+        [6, "kraken tentacle", 1],
         # Level 7
-        [7, "$category:godsword shards", 20],
-        [7, "$category:arma uniques", 20],
-        [7, "coins", 2500000],
-        [7, "$category:gems", 5000],
+        [7, "$category:godsword shards", 2],
+        [7, "coins", 250000],
+        [7, "$category:gems", 500],
         # Level 8
-        [8, "coins", 40],
-        [8, "coins", 40],
-        [8, "coins", 40],
-        [8, "coins", 40],
-        [8, "coins", 40],
+        [8, "$category:colosseum uniques", 1],
+        [8, "$category:arma uniques", 1],
+        [8, "giant egg sac", 5],
         # Level 9
-        [9, "coins", 5000000],
-        [9, "coins", 80],
-        [9, "coins", 80],
-        [9, "coins", 80],
-        [9, "coins", 80],
+        [9, "coins", 500000],
+        [9, "ancient totem", 1],
+        [9, "$category:dks rings", 5],
+        [9, "granite shield", 2],
+        [9, "granite helm", 2],
     ]
 
 [assets.slayer_master]
@@ -116,41 +116,34 @@
     # Upgrade requirements for Slayer Master by level
     upgrade_costs = [
         # Level 2
-        [2, "bones", 1],
-        [2, "bones", 1],
+        [2, "$category:ores", 100],
+        [2, "bones", 100],
+        [2, "scaly blue dragonhide", 5],
         # Level 3
-        [3, "bones", 1],
-        [3, "bones", 1],
+        [3, "sunfire splinters", 5000],
+        [3, "top of sceptre", 4],
         # Level 4
-        [4, "coins", 1],
-        [4, "coins", 1],
-        [4, "coins", 1],
+        [4, "$category: elder chaos robes", 3],
+        [4, "long bone", 2],
+        [4, "red spiders' eggs", 500],
         # Level 5
         [5, "adamant javelin", 1000],
-        [5, "coins", 5],
-        [5, "coins", 5],
+        [5, "dragon 2h sword", 1],
+        [5, "$category:gems", 500],
         # Level 6
-        [6, "$category:tormented demon uniques", 10],
-        [6, "coins", 10],
-        [6, "coins", 10],
-        [6, "coins", 10],
+        [6, "$category:tormented demon uniques", 2],
+        [6, "onyx bolt tips", 1000],
+        [6, "coins", 100000],
+        [6, "$category:herbs", 1000],
         # Level 7 - sire
-        [7, "$category:voidwaker pieces", 20],
-        [7, "coins", 20],
-        [7, "coins", 20],
-        [7, "coins", 20],
+        [7, "$category:voidwaker pieces", 1],
+        [7, "clue scroll (medium)", 10],
         # Level 8
-        [8, "coins", 40],
-        [8, "coins", 40],
-        [8, "coins", 40],
-        [8, "coins", 40],
-        [8, "coins", 40],
+        [8, "saradomin's light", 1],
+        [8, "$category:toa purple", 1],
         # Level 9
-        [9, "coins", 80],
-        [9, "coins", 80],
-        [9, "coins", 80],
-        [9, "coins", 80],
-        [9, "coins", 80],
+        [9, "monkey tail", 1],
+        [9, "coins", 500000],
     ]
 
 # Treasury - For storing and managing team funds
@@ -163,7 +156,7 @@
 
     # Upgrade requirements for Treasury by level
     upgrade_costs = [
-        [1, "bones", 1],
+        [1, "$category:runes", 150],
         [1, "bones", 1],
         [1, "bones", 1],
         # Level 2
@@ -171,11 +164,12 @@
         [2, "bones", 1],
         [2, "bones", 1],
         # Level 3
+        [3, "ranarr seed", 20],
         [3, "bones", 1],
-        [3, "bones", 1],
+        [3, "$category:ores", 500],
         [3, "bones", 1],
         # Level 4
-        [4, "coins", 1],
+        [4, "dragon javelin heads", 150],
         [4, "coins", 1],
         [4, "coins", 1],
         [4, "coins", 1],
@@ -187,11 +181,11 @@
         # Level 6
         [6, "coins", 10],
         [6, "coins", 10],
-        [6, "coins", 10],
+        [6, "chromium ingot", 1],
         [6, "coins", 10],
         [6, "coins", 10],
         # Level 7
-        [7, "coins", 20],
+        [7, "abyssal whip", 1],
         [7, "coins", 20],
         [7, "coins", 20],
         # Level 8
@@ -217,7 +211,7 @@
     upgrade_costs = [
         [1, "bones", 1],
         # Level 2
-        [2, "bones", 2],
+        [2, "sapphire ring", 5],
         [2, "iron", 10],
         # Level 3
         [3, "bones", 5],
@@ -233,7 +227,7 @@
         [6, "iron", 600],
         [6, "crystal", 5],
         # Level 7
-        [7, "coins", 40],
+        [7, "rune boots", 5],
         [7, "iron", 1200],
         [7, "crystal", 15],
         # Level 8
@@ -257,7 +251,7 @@
 
     # Upgrade requirements for Herbalist's Hut by level
     upgrade_costs = [
-        [1, "bones", 1],
+        [1, "$category:bones", 100],
         # Level 2
         [2, "bones", 2],
         [2, "grimy guam", 2],
@@ -299,7 +293,7 @@
 
     # Upgrade requirements for Woodcutter's Lodge by level
     upgrade_costs = [
-        [1, "bones", 1],
+        [1, "$category:gems", 10],
         # Level 2
         [2, "bones", 2],
         [2, "wood", 10],
@@ -310,11 +304,11 @@
         [4, "coins", 5],
         [4, "wood", 150],
         # Level 5
-        [5, "coins", 10],
+        [5, "ancient crystal", 1],
         [5, "wood", 300],
         # Level 6
-        [6, "coins", 20],
-        [6, "wood", 600],
+        [6, "berserker ring", 1],
+        [6, "coins", 25000],
         [6, "crystal", 5],
         # Level 7
         [7, "coins", 40],
@@ -341,12 +335,14 @@
 
     # Upgrade requirements for Farming Guild by level
     upgrade_costs = [
-        [1, "bones", 50],
+        [1, "$category:runes", 100],
+        [1, "$category:seeds", 50],
+        [1, "coins", 1000],
         # Level 2
         [2, "$category:herbs", 100],
         [2, "$category:coins", 25000],
         # Level 3
-        [3, "bones", 5],
+        [3, "iron halberd", 2],
         [3, "seeds", 50],
         [3, "seeds", 50],
         # Level 4
@@ -372,7 +368,7 @@
         [8, "seeds", 2400],
         [8, "seeds", 2400],
         # Level 9
-        [9, "coins", 160],
+        [9, "bottomless compost bucket", 160],
         [9, "seeds", 4800],
         [9, "seeds", 4800],
         [9, "seeds", 4800],
@@ -389,7 +385,8 @@
 
     # Upgrade requirements for Magic Workshop by level
     upgrade_costs = [
-        [1, "bones", 1],
+        [1, "$category:herbs", 50],
+        [1, "coins", 2500],
         # Level 2
         [2, "bones", 2],
         [2, "runes", 5],
@@ -410,6 +407,7 @@
         [7, "coins", 40],
         [7, "ores", 10],
         [7, "gems", 15],
+        [7, "dark claw", 1],
         # Level 8
         [8, "coins", 80],
         [8, "gems", 30],
@@ -429,10 +427,10 @@
 
     # Upgrade requirements for Slayer Master by level
     upgrade_costs = [
-        [1, "gems", 1],
-        [1, "gems", 1],
+        [1, "coins", 1000],
+        [1, "pure essence", 500],
         # Level 2
-        [2, "gems", 1],
+        [2, "scurrius' spine", 1],
         [2, "gems", 1],
         # Level 3
         [3, "gems", 1],
@@ -446,7 +444,7 @@
         [5, "gems", 5],
         [5, "gems", 5],
         # Level 6
-        [6, "gems", 10],
+        [6, "tzhaar-ket-om", 1],
         [6, "gems", 10],
         [6, "gems", 10],
         # Level 7
@@ -472,20 +470,27 @@
 
     # Upgrade requirements for Garrisons by level
     upgrade_costs = [
-        # Level 2 - colosseum
+        # Level 2 - lunar chests
         [2, "$category:leaf-bladed items", 3],
-        [2, "coins", 10],
-        # Level 3 - toa
-        [3, "bones", 5],
+        [2, "blood shard", 1],
+        [2, "bronze bar", 25],
+        # Level 3 - colosseum
+        [3, "granite legs", 1],
+        [3, "rune hasta", 25],
         [3, "unsired", 2],
         [3, "sarachnis cudgel", 50],
-        # Level 4 - cox
-        [4, "bones", 10],
-        [4, "coins", 100],
-        [4, "coins", 100],
-        [4, "coins", 100],
+        # Level 4 - toa
+        [4, "dragon pickaxe", 2],
+        [4, "dragon chainbody", 1],
+        [4, "dragon platelegs", 20],
+        [4, "dragon med helm", 5],
+        [4, "shield left half", 1],
+        # Level 5 - cox
+        [5, "fedora", 1],
+        [5, "spirit shield", 1],
+        [5, "$category:malediction/odium shards", 100],
         # Level 5 - tob
-        [5, "bones", 10],
-        [5, "coins", 100],
-        [5, "coins", 100],
+        [6, "fedora", 1],
+        [6, "spirit shield", 1],
+        [6, "$category:malediction/odium shards", 100],
     ]

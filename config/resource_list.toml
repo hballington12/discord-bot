@@ -51,6 +51,10 @@
     category = "gems"
 
 [[resource_pattern]]
+    pattern = "(opal|jade|pearl|topaz|sapphire|emerald|ruby|diamond|dragonstone|onyx) bolt tips"
+    category = "gems"
+
+[[resource_pattern]]
     pattern = "(arcane prayer scroll|dexterous prayer scroll|twisted buckler|dragon hunter crossbow|dinh's bulwark|ancestral hat|ancestral robe top|ancestral robe bottom|dragon claws|elder maul|kodai insignia|twisted bow)"
     category = "cox purple"
 
@@ -101,6 +105,14 @@
 [[resource_pattern]]
     pattern = "(leaf-bladed battleaxe|leaf-bladed sword)"
     category = "leaf-bladed items"
+
+[[resource_pattern]]
+    pattern = "(elder chaos hood|elder chaos robe|elder chaos top)"
+    category = "elder chaos robes"
+
+[[resource_pattern]]
+    pattern = "(malediction shard [1-3]|odium shard [1-3])"
+    category = "malediction/odium shards"
 
 [[resource_pattern]]
     pattern = ".*"    # catchall, must be last
