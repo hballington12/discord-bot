@@ -176,7 +176,7 @@ pub async fn start_webhook_server(port: u16) -> (WebhookSender, WebhookReceiver)
         .with_state(state);
 
     // Start the server
-    let addr = std::net::SocketAddr::from(([127, 0, 0, 1], port));
+    let addr = std::net::SocketAddr::from(([0, 0, 0, 0], port));
     println!("Starting webhook server on {}", addr);
 
     tokio::spawn(async move {
