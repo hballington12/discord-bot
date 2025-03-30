@@ -8,12 +8,56 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::mpsc;
 
-// Define webhook payload structure
+// Update the webhook payload structure to match Discord's format
 #[derive(Debug, Deserialize, Serialize)]
 pub struct WebhookPayload {
-    pub event_type: String,
-    pub content: String,
-    // Add additional fields as needed
+    pub r#type: String, // Using r# prefix because "type" is a reserved keyword
+    pub playerName: String,
+    pub accountType: Option<String>,
+    pub dinkAccountHash: String,
+    pub clanName: Option<String>,
+    pub seasonalWorld: bool,
+    pub world: i32,
+    pub regionId: i32,
+    pub extra: serde_json::Value, // Use generic Value for complex nested structures
+    pub embeds: Vec<Embed>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Embed {
+    pub title: String,
+    pub description: String,
+    pub author: Option<EmbedAuthor>,
+    pub color: Option<i32>,
+    pub thumbnail: Option<EmbedThumbnail>,
+    pub fields: Option<Vec<EmbedField>>,
+    pub footer: Option<EmbedFooter>,
+    pub timestamp: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct EmbedAuthor {
+    pub name: String,
+    pub icon_url: Option<String>,
+    pub url: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct EmbedThumbnail {
+    pub url: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct EmbedField {
+    pub name: String,
+    pub value: String,
+    pub inline: Option<bool>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct EmbedFooter {
+    pub text: String,
+    pub icon_url: Option<String>,
 }
 
 // Define response structure

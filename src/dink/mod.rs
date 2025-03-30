@@ -27,10 +27,10 @@ mod tests {
     }
 }
 
-struct DinkDrop {
-    user: String,
-    source: String,
-    loots: Vec<(String, u32)>,
+pub struct DinkDrop {
+    pub user: String,
+    pub source: String,
+    pub loots: Vec<(String, u32)>,
 }
 
 impl DinkDrop {
@@ -81,7 +81,11 @@ pub async fn handle_message(
 /// For each loot, query the hash table to determine if it is of note.
 /// For each noteworthy loot, update the quantity in resources for the player's
 /// team.
-async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> Result<(), Error> {
+pub async fn process_drop(
+    ctx: &serenity::Context,
+    data: &Data,
+    drop: DinkDrop,
+) -> Result<(), Error> {
     let pool = &data.database;
 
     // Convert username to lowercase for consistent database access
@@ -248,7 +252,7 @@ async fn process_drop(ctx: &serenity::Context, data: &Data, drop: DinkDrop) -> R
 ///
 /// Input format: "User has looted: \n\n# x [Item](url) (value)\n# x [Item](url) (value)\nFrom: [Source](url)"
 /// Output: (username, Vec<(item_name, quantity)>, source)
-fn parse_loot_text(text: &str) -> Result<DinkDrop, Error> {
+pub fn parse_loot_text(text: &str) -> Result<DinkDrop, Error> {
     // Extract username (assumes format "Username has looted:")
     let username = match text.split(" has looted:").next() {
         Some(name) => name.trim().to_string(),

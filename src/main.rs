@@ -84,16 +84,46 @@ async fn process_webhook(
     payload: &webhook::WebhookPayload,
 ) -> Result<(), Error> {
     let channel_id = serenity::ChannelId::new(data.dink_channel_id);
+    println!(
+        "Processing webhook from {}: {}",
+        payload.playerName, payload.r#type
+    );
 
-    channel_id
-        .say(
-            &ctx.http,
-            format!(
-                "Webhook received!\nType: {}\nContent: {}",
-                payload.event_type, payload.content
-            ),
-        )
-        .await?;
+    // Process each embed in the payload
+    for embed in &payload.embeds {
+        let description = &embed.description;
+
+        println!("Processing embed description: {}", description);
+
+        // Parse the loot text using your existing function
+        match dink::parse_loot_text(description) {
+            Ok(drop) => {
+                println!(
+                    "Processing drop: User: {}, Source: {}, Items: {:?}",
+                    drop.user, drop.source, drop.loots
+                );
+
+                // Process the drop using your existing function
+                if let Err(e) = dink::process_drop(ctx, data, drop).await {
+                    eprintln!("Error processing drop: {}", e);
+                    continue;
+                }
+            }
+            Err(e) => {
+                eprintln!("Failed to parse loot text: {}", e);
+
+                // Send a simple message with the raw embed info if parsing fails
+                let message = format!(
+                    "**New Event from {}**\nType: {}\n\n{}",
+                    payload.playerName, payload.r#type, description
+                );
+
+                if let Err(send_err) = channel_id.say(&ctx.http, message).await {
+                    eprintln!("Error sending message: {}", send_err);
+                }
+            }
+        }
+    }
 
     Ok(())
 }
