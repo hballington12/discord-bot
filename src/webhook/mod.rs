@@ -91,7 +91,7 @@ async fn handle_webhook(
         if let Some(name) = field.name() {
             if name == "payload_json" {
                 if let Ok(value) = field.text().await {
-                    println!("Received payload_json: {}", value);
+                    // println!("Received payload_json: {}", value);
                     // Parse the JSON string into your WebhookPayload struct
                     match serde_json::from_str::<WebhookPayload>(&value) {
                         Ok(payload) => {
@@ -116,7 +116,7 @@ async fn handle_webhook(
 
     // Process the payload
     if let Some(payload) = payload_json {
-        println!("Received webhook: {:?}", payload);
+        // println!("Received webhook: {:?}", payload);
 
         // Send the webhook payload to the main bot process
         if let Err(e) = state.webhook_sender.send(payload).await {

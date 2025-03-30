@@ -59,7 +59,7 @@ async fn event_handler(
                 drop(receiver_guard);
 
                 while let Some(payload) = receiver.recv().await {
-                    println!("Processing webhook: {:?}", payload);
+                    // println!("Processing webhook: {:?}", payload);
                     if let Err(e) = process_webhook(&ctx_clone, &data, &payload).await {
                         eprintln!("Error processing webhook: {}", e);
                     }
@@ -84,16 +84,16 @@ async fn process_webhook(
     payload: &webhook::WebhookPayload,
 ) -> Result<(), Error> {
     let channel_id = serenity::ChannelId::new(data.dink_channel_id);
-    println!(
-        "Processing webhook from {}: {}",
-        payload.playerName, payload.r#type
-    );
+    // println!(
+    //     "Processing webhook from {}: {}",
+    //     payload.playerName, payload.r#type
+    // );
 
     // Process each embed in the payload
     for embed in &payload.embeds {
         let description = &embed.description;
 
-        println!("Processing embed description: {}", description);
+        // println!("Processing embed description: {}", description);
 
         // Parse the loot text using your existing function
         match dink::parse_loot_text(description) {
