@@ -296,12 +296,47 @@ pub async fn send_webhook(
         "content": message
     });
 
-    if let Err(e) = client.post(&webhook_url).json(&payload).send().await {
-        eprintln!("Failed to send webhook: {}", e);
-        return Err(e.into());
+    let response = client.post(&webhook_url).json(&payload).send().await;
+
+    match response {
+        Ok(resp) => {
+            if resp.status().is_success() {
+                println!("Webhook sent successfully: {}", message);
+
+                // Log rate limit headers
+                if let Some(limit) = resp.headers().get("X-RateLimit-Limit") {
+                    println!("Rate limit: {}", limit.to_str().unwrap_or("unknown"));
+                }
+                if let Some(remaining) = resp.headers().get("X-RateLimit-Remaining") {
+                    println!(
+                        "Rate limit remaining: {}",
+                        remaining.to_str().unwrap_or("unknown")
+                    );
+                }
+                if let Some(reset_after) = resp.headers().get("X-RateLimit-Reset-After") {
+                    println!(
+                        "Rate limit resets after: {} seconds",
+                        reset_after.to_str().unwrap_or("unknown")
+                    );
+                }
+            } else if resp.status().as_u16() == 429 {
+                // Handle rate limit exceeded
+                if let Some(retry_after) = resp.headers().get("Retry-After") {
+                    println!(
+                        "Rate limit exceeded. Retry after: {} seconds",
+                        retry_after.to_str().unwrap_or("unknown")
+                    );
+                }
+            } else {
+                eprintln!("Failed to send webhook: {}", resp.status());
+            }
+        }
+        Err(e) => {
+            eprintln!("Failed to send webhook: {}", e);
+            return Err(e.into());
+        }
     }
 
-    println!("Webhook sent successfully: {}", message);
     Ok(())
 }
 
