@@ -250,7 +250,9 @@ pub async fn process_drop(
         }
     }
 
+    println!("attempting to update team embeds");
     update_team_embeds(ctx, data, &team.1).await?;
+    println!("team embeds updated");
     send_webhook(
         &drop.user,
         true,
