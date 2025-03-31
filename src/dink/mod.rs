@@ -1,4 +1,5 @@
 use poise::serenity_prelude as serenity;
+use reqwest::Client;
 
 use crate::coc::commands::update_team_embeds;
 use crate::coc::database::{
@@ -88,31 +89,26 @@ pub async fn process_drop(
 ) -> Result<(), Error> {
     let pool = &data.database;
 
-    // Convert username to lowercase for consistent database access
     let username = drop.user.to_lowercase();
 
-    // Check if the user belongs to any team
     let team = match get_user_team(pool, &username).await {
         Ok(Some(team)) => team,
         Ok(None) => {
             println!("User '{}' is not in any team, ignoring drop", drop.user);
+            send_webhook(&drop.user, false, &drop.source, Some("Not in any team")).await?;
             return Ok(());
         }
         Err(e) => {
             println!("Database error when checking user team: {}", e);
+            send_webhook(&drop.user, false, &drop.source, Some("Database error")).await?;
             return Err(e.into());
         }
     };
 
-    // println!("getting combat level");
     // Check if the source has a valid combat level
     match data.bestiary.get_combat_level(&drop.source) {
         Some(level) => {
             let source_combat_level = level as i32;
-            // println!(
-            //     "Combat level for source '{}': {}",
-            //     drop.source, source_combat_level
-            // );
 
             // Check if team has access to monsters of this combat level
             if !get_team_armory_level(pool, source_combat_level, team.0)
@@ -123,6 +119,13 @@ pub async fn process_drop(
                     "Team '{}' doesn't have access to combat level {} monsters",
                     team.1, source_combat_level
                 );
+                send_webhook(
+                    &drop.user,
+                    false,
+                    &drop.source,
+                    Some("Team lacks access to this combat level"),
+                )
+                .await?;
                 return Ok(());
             }
 
@@ -139,6 +142,13 @@ pub async fn process_drop(
                             "Team '{}' doesn't have access to slayer level {} monsters",
                             team.1, level
                         );
+                        send_webhook(
+                            &drop.user,
+                            false,
+                            &drop.source,
+                            Some("Team lacks access to this slayer level"),
+                        )
+                        .await?;
                         return Ok(());
                     }
                 }
@@ -147,45 +157,62 @@ pub async fn process_drop(
         }
         None => {
             println!("No combat level found for source '{}'", drop.source);
-            // retrieve the teams garrisons level
             let garrisons_level =
                 database::get_team_building_level(pool, team.0, "garrisons").await?;
 
-            // allow the code to proceed if the source is a raid drop
-            // valid raids are:
-            // "Tombs of Amascut" garrisons level 2
-            // "Chambers of Xeric", garrisons level 3
-            // "Theatre of Blood", garrisons level 4
-
-            // check the different patterns and return early if garrisons level is not met
-            // first check toms of amascut
-            if drop.source.to_lowercase() == "lunar chest" {
-                if garrisons_level < 2 {
-                    println!("Team '{}' doesn't have access to Lunar Chests", team.1);
-                    return Ok(());
-                }
-            } else if drop.source.to_lowercase() == "fortis colosseum" {
-                if garrisons_level < 3 {
-                    println!("Team '{}' doesn't have access to Fortis Colosseum", team.1);
-                    return Ok(());
-                }
-            } else if drop.source.to_lowercase() == "tombs of amascut" {
-                if garrisons_level < 4 {
-                    println!("Team '{}' doesn't have access to Tombs of Amascut", team.1);
-                    return Ok(());
-                }
-            } else if drop.source.to_lowercase() == "chambers of xeric" {
-                if garrisons_level < 5 {
-                    println!("Team '{}' doesn't have access to Chambers of Xeric", team.1);
-                    return Ok(());
-                }
-            } else if drop.source.to_lowercase() == "theatre of blood" {
-                if garrisons_level < 6 {
-                    println!("Team '{}' doesn't have access to Theatre of Blood", team.1);
-                    return Ok(());
-                }
+            if drop.source.to_lowercase() == "lunar chest" && garrisons_level < 2 {
+                println!("Team '{}' doesn't have access to Lunar Chests", team.1);
+                send_webhook(
+                    &drop.user,
+                    false,
+                    &drop.source,
+                    Some("Team lacks access to Lunar Chests"),
+                )
+                .await?;
+                return Ok(());
+            } else if drop.source.to_lowercase() == "fortis colosseum" && garrisons_level < 3 {
+                println!("Team '{}' doesn't have access to Fortis Colosseum", team.1);
+                send_webhook(
+                    &drop.user,
+                    false,
+                    &drop.source,
+                    Some("Team lacks access to Fortis Colosseum"),
+                )
+                .await?;
+                return Ok(());
+            } else if drop.source.to_lowercase() == "tombs of amascut" && garrisons_level < 4 {
+                println!("Team '{}' doesn't have access to Tombs of Amascut", team.1);
+                send_webhook(
+                    &drop.user,
+                    false,
+                    &drop.source,
+                    Some("Team lacks access to Tombs of Amascut"),
+                )
+                .await?;
+                return Ok(());
+            } else if drop.source.to_lowercase() == "chambers of xeric" && garrisons_level < 5 {
+                println!("Team '{}' doesn't have access to Chambers of Xeric", team.1);
+                send_webhook(
+                    &drop.user,
+                    false,
+                    &drop.source,
+                    Some("Team lacks access to Chambers of Xeric"),
+                )
+                .await?;
+                return Ok(());
+            } else if drop.source.to_lowercase() == "theatre of blood" && garrisons_level < 6 {
+                println!("Team '{}' doesn't have access to Theatre of Blood", team.1);
+                send_webhook(
+                    &drop.user,
+                    false,
+                    &drop.source,
+                    Some("Team lacks access to Theatre of Blood"),
+                )
+                .await?;
+                return Ok(());
             } else {
                 println!("No combat level found for source '{}'", drop.source);
+                send_webhook(&drop.user, false, &drop.source, Some("Invalid source")).await?;
                 return Ok(());
             }
         }
@@ -196,55 +223,85 @@ pub async fn process_drop(
         let quantity = quantity as i64;
         let item_name = item_name.to_lowercase();
 
-        // Check if item matches resource pattern
         let result =
             coc::patterns::matches_pattern(&item_name, &data.res_patterns.resource_pattern);
 
-        // Skip this item if it doesn't match any resource pattern
         if !result {
             continue;
         }
 
-        // get the category for the item
         let category =
             coc::patterns::get_resource_category(&item_name, &data.res_patterns.resource_pattern);
 
-        println!("Item match found with category: {}", category);
-        // get the modified resource amount
         let quantity =
             coc::database::calculate_resource_total(pool, quantity as i32, team.0, &category)
                 .await?;
 
-        // Check if this resource already exists for the team
         let existing_resource = get_resource_quantity_by_name(pool, team.0, &item_name).await?;
-        // println!("Existing resource: {:?}", existing_resource);
 
         match existing_resource {
             Some(resource) => {
-                // Update quantity of existing resource
                 let new_quantity = resource + quantity as i64;
                 update_resource_quantity(pool, team.0, &item_name, new_quantity).await?;
-
-                println!(
-                    "Updated resource quantity for team '{}': {} x {} (new total: {})",
-                    team.1, item_name, quantity, new_quantity
-                );
             }
             None => {
-                // Insert new resource entry
                 insert_new_resource(pool, team.0, &item_name, &category, quantity as i64).await?;
-
-                println!(
-                    "Added new resource for team '{}': {} x {}",
-                    team.1, item_name, quantity
-                );
             }
         }
     }
 
-    // also update any embed resource messages
-    let _ = update_team_embeds(ctx, data, &team.1).await?;
+    update_team_embeds(ctx, data, &team.1).await?;
+    send_webhook(
+        &drop.user,
+        true,
+        &drop.source,
+        Some("Drop processed successfully"),
+    )
+    .await?;
 
+    Ok(())
+}
+
+/// Sends a Discord webhook message.
+///
+/// # Arguments
+/// * `player_name` - The name of the player.
+/// * `status` - A boolean value indicating some condition (e.g., success or failure).
+/// * `source` - The source of the drop.
+/// * `optional_message` - An optional string to include in the webhook message.
+pub async fn send_webhook(
+    player_name: &str,
+    status: bool,
+    source: &str,
+    optional_message: Option<&str>,
+) -> Result<(), Error> {
+    let webhook_url = std::env::var("DISCORD_WEBHOOK_URL")
+        .expect("DISCORD_WEBHOOK_URL environment variable not set");
+
+    let status_emoji = if status { "✅" } else { "❌" };
+    let message = if status {
+        format!("{} {} {}", player_name, source, status_emoji)
+    } else {
+        format!(
+            "{} {} {} {}",
+            player_name,
+            source,
+            status_emoji,
+            optional_message.unwrap_or("")
+        )
+    };
+
+    let client = Client::new();
+    let payload = serde_json::json!({
+        "content": message
+    });
+
+    if let Err(e) = client.post(&webhook_url).json(&payload).send().await {
+        eprintln!("Failed to send webhook: {}", e);
+        return Err(e.into());
+    }
+
+    println!("Webhook sent successfully: {}", message);
     Ok(())
 }
 
