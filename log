@@ -1,0 +1,5 @@
+Starting webhook server on 127.0.0.1:3000
+[2m2025-03-30T13:52:04.226396Z[0m [32m INFO[0m [1mstart[0m[2m:[0m[1mstart_connection[0m[1m{[0m[3mstart_shard[0m[2m=[0m0 [3mend_shard[0m[2m=[0m0 [3mtotal_shards[0m[2m=[0m1[1m}[0m[2m:[0m[1minitialize[0m[2m:[0m[1mboot[0m[1m{[0m[3mshard_info[0m[2m=[0m[ShardId(0), ShardId(1)][1m}[0m[2m:[0m [2mserenity::gateway::bridge::shard_manager[0m[2m:[0m Telling shard queuer to start shard 0
+[2m2025-03-30T13:52:04.393984Z[0m [32m INFO[0m [1mrun[0m[2m:[0m [2mserenity::gateway::bridge::shard_runner[0m[2m:[0m [ShardRunner ShardInfo { id: ShardId(0), total: 1 }] Running
+Logged in as Clash of Tea
+Logged in as Clash of Tea
