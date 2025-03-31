@@ -214,11 +214,32 @@ async fn main() {
                     .parse::<u64>()
                     .expect("DINK_UPDATES_CHANNEL_ID must be a valid u64");
 
+<<<<<<< HEAD
                 let pool_options = sqlx::sqlite::SqlitePoolOptions::new()
                     .max_connections(30)
                     .min_connections(10);
 
                 let pool = pool_options.connect(&env::var("DATABASE_URL")?).await?;
+=======
+                // Configure SQLite pool with optimized settings for high concurrency
+                let pool_options = sqlx::pool::PoolOptions::<sqlx::Sqlite>::new()
+                    .max_connections(20) // Increase max connections in the pool
+                    .min_connections(5) // Keep some connections ready
+                    .idle_timeout(std::time::Duration::from_secs(30))
+                    .acquire_timeout(std::time::Duration::from_secs(30));
+
+                let pool = pool_options
+                    .connect_with(
+                        sqlx::sqlite::SqliteConnectOptions::new()
+                            .filename(&env::var("DATABASE_URL")?)
+                            .create_if_missing(true)
+                            .journal_mode(sqlx::sqlite::SqliteJournalMode::Wal) // Write-Ahead Logging for better concurrency
+                            .synchronous(sqlx::sqlite::SqliteSynchronous::Normal) // Balance between safety and performance
+                            .foreign_keys(true)
+                            .busy_timeout(std::time::Duration::from_secs(30)), // Longer timeout for busy connections
+                    )
+                    .await?;
+>>>>>>> refs/remotes/origin/main
 
                 let res_patterns = coc::patterns::load_res_patterns();
 
