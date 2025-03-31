@@ -86,50 +86,79 @@ async fn handle_webhook(
 
     let mut payload_json = None;
 
+    // Debug: Log before processing multipart form
+    println!("[DEBUG] Starting to process multipart form");
+
     // Process the multipart form
     while let Ok(Some(field)) = multipart.next_field().await {
+        println!("[DEBUG] Processing multipart field");
+
         if let Some(name) = field.name() {
+            println!("[DEBUG] Field name: {}", name);
+
             if name == "payload_json" {
-                if let Ok(value) = field.text().await {
-                    // println!("Received payload_json: {}", value);
-                    // Parse the JSON string into your WebhookPayload struct
-                    match serde_json::from_str::<WebhookPayload>(&value) {
-                        Ok(payload) => {
-                            payload_json = Some(payload);
+                println!("[DEBUG] Found payload_json field");
+
+                match field.text().await {
+                    Ok(value) => {
+                        println!("[DEBUG] Successfully read payload_json text");
+                        // Parse the JSON string into your WebhookPayload struct
+                        match serde_json::from_str::<WebhookPayload>(&value) {
+                            Ok(payload) => {
+                                println!("[DEBUG] Successfully parsed payload JSON");
+                                payload_json = Some(payload);
+                            }
+                            Err(e) => {
+                                eprintln!("[ERROR] Failed to parse payload_json: {}", e);
+                                println!("[DEBUG] Raw payload content: {}", value);
+                                return (
+                                    StatusCode::BAD_REQUEST,
+                                    Json(WebhookResponse {
+                                        status: "error".to_string(),
+                                        message: "Invalid payload format".to_string(),
+                                    }),
+                                );
+                            }
                         }
-                        Err(e) => {
-                            eprintln!("Failed to parse payload_json: {}", e);
-                            return (
-                                StatusCode::BAD_REQUEST,
-                                Json(WebhookResponse {
-                                    status: "error".to_string(),
-                                    message: "Invalid payload format".to_string(),
-                                }),
-                            );
-                        }
+                    }
+                    Err(e) => {
+                        eprintln!("[ERROR] Failed to read field text: {}", e);
                     }
                 }
             }
-            // You can also handle file attachments here if needed
+        } else {
+            println!("[DEBUG] Field has no name");
         }
     }
 
+    println!("[DEBUG] Finished processing multipart form");
+
     // Process the payload
     if let Some(payload) = payload_json {
-        // println!("Received webhook: {:?}", payload);
+        println!(
+            "[DEBUG] Processing payload: type={}, player={}",
+            payload.r#type, payload.playerName
+        );
 
         // Send the webhook payload to the main bot process
-        if let Err(e) = state.webhook_sender.send(payload).await {
-            eprintln!("Failed to send webhook payload: {}", e);
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(WebhookResponse {
-                    status: "error".to_string(),
-                    message: "Failed to process webhook".to_string(),
-                }),
-            );
+        println!("[DEBUG] Attempting to send payload to channel");
+        match state.webhook_sender.send(payload).await {
+            Ok(_) => {
+                println!("[DEBUG] Successfully sent payload to channel");
+            }
+            Err(e) => {
+                eprintln!("[ERROR] Failed to send webhook payload: {}", e);
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(WebhookResponse {
+                        status: "error".to_string(),
+                        message: "Failed to process webhook".to_string(),
+                    }),
+                );
+            }
         }
 
+        println!("[DEBUG] Returning success response");
         return (
             StatusCode::OK,
             Json(WebhookResponse {
@@ -137,8 +166,11 @@ async fn handle_webhook(
                 message: "Webhook received".to_string(),
             }),
         );
+    } else {
+        println!("[DEBUG] No payload_json found");
     }
 
+    println!("[DEBUG] Returning bad request response");
     (
         StatusCode::BAD_REQUEST,
         Json(WebhookResponse {
@@ -163,6 +195,7 @@ async fn health_check() -> (StatusCode, Json<WebhookResponse>) {
 pub async fn start_webhook_server(port: u16) -> (WebhookSender, WebhookReceiver) {
     // Create a channel for communication
     let (webhook_sender, webhook_receiver) = mpsc::channel(100);
+    println!("[DEBUG] Created webhook channel with capacity 100");
 
     // Create app state
     let state = AppState {
@@ -180,9 +213,21 @@ pub async fn start_webhook_server(port: u16) -> (WebhookSender, WebhookReceiver)
     println!("Starting webhook server on {}", addr);
 
     tokio::spawn(async move {
-        let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
-        axum::serve(listener, app).await.unwrap();
+        println!("[DEBUG] Inside tokio::spawn for webhook server");
+        match tokio::net::TcpListener::bind(addr).await {
+            Ok(listener) => {
+                println!("[DEBUG] Successfully bound to address {}", addr);
+                println!("[DEBUG] Starting axum server");
+                if let Err(e) = axum::serve(listener, app).await {
+                    eprintln!("[ERROR] Server error: {}", e);
+                }
+            }
+            Err(e) => {
+                eprintln!("[ERROR] Failed to bind to address {}: {}", addr, e);
+            }
+        }
     });
 
+    println!("[DEBUG] Webhook server spawned, returning channel endpoints");
     (webhook_sender, webhook_receiver)
 }
