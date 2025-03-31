@@ -275,8 +275,24 @@ pub async fn send_webhook(
     source: &str,
     optional_message: Option<&str>,
 ) -> Result<(), Error> {
-    let webhook_url = std::env::var("DISCORD_WEBHOOK_URL")
-        .expect("DISCORD_WEBHOOK_URL environment variable not set");
+    println!(
+        "🔍 send_webhook: Starting webhook send for player '{}', status: {}, source: '{}'",
+        player_name, status, source
+    );
+
+    let webhook_url = match std::env::var("DISCORD_WEBHOOK_URL") {
+        Ok(url) => {
+            println!("🔍 send_webhook: Got webhook URL (length: {})", url.len());
+            url
+        }
+        Err(e) => {
+            eprintln!(
+                "❌ send_webhook: DISCORD_WEBHOOK_URL environment variable not set: {}",
+                e
+            );
+            return Err("DISCORD_WEBHOOK_URL environment variable not set".into());
+        }
+    };
 
     let status_emoji = if status { "✅" } else { "❌" };
     let message = if status {
@@ -291,52 +307,89 @@ pub async fn send_webhook(
         )
     };
 
+    println!("🔍 send_webhook: Preparing to send message: '{}'", message);
+
     let client = Client::new();
     let payload = serde_json::json!({
         "content": message
     });
 
+    println!("🔍 send_webhook: Sending payload to webhook");
+
     let response = client.post(&webhook_url).json(&payload).send().await;
+    println!("🔍 send_webhook: Response received");
 
     match response {
         Ok(resp) => {
+            println!("🔍 send_webhook: HTTP Status: {}", resp.status());
+
             if resp.status().is_success() {
-                println!("Webhook sent successfully: {}", message);
+                println!("✅ send_webhook: Webhook sent successfully: {}", message);
 
                 // Log rate limit headers
                 if let Some(limit) = resp.headers().get("X-RateLimit-Limit") {
-                    println!("Rate limit: {}", limit.to_str().unwrap_or("unknown"));
+                    let limit_str = limit.to_str().unwrap_or("unknown");
+                    println!("🔍 send_webhook: Rate limit: {}", limit_str);
+                } else {
+                    println!("🔍 send_webhook: No X-RateLimit-Limit header found");
                 }
+
                 if let Some(remaining) = resp.headers().get("X-RateLimit-Remaining") {
-                    println!(
-                        "Rate limit remaining: {}",
-                        remaining.to_str().unwrap_or("unknown")
-                    );
+                    let remaining_str = remaining.to_str().unwrap_or("unknown");
+                    println!("🔍 send_webhook: Rate limit remaining: {}", remaining_str);
+                } else {
+                    println!("🔍 send_webhook: No X-RateLimit-Remaining header found");
                 }
+
                 if let Some(reset_after) = resp.headers().get("X-RateLimit-Reset-After") {
+                    let reset_str = reset_after.to_str().unwrap_or("unknown");
                     println!(
-                        "Rate limit resets after: {} seconds",
-                        reset_after.to_str().unwrap_or("unknown")
+                        "🔍 send_webhook: Rate limit resets after: {} seconds",
+                        reset_str
                     );
+                } else {
+                    println!("🔍 send_webhook: No X-RateLimit-Reset-After header found");
                 }
             } else if resp.status().as_u16() == 429 {
                 // Handle rate limit exceeded
                 if let Some(retry_after) = resp.headers().get("Retry-After") {
+                    let retry_str = retry_after.to_str().unwrap_or("unknown");
                     println!(
-                        "Rate limit exceeded. Retry after: {} seconds",
-                        retry_after.to_str().unwrap_or("unknown")
+                        "⚠️ send_webhook: Rate limit exceeded. Retry after: {} seconds",
+                        retry_str
+                    );
+                } else {
+                    println!(
+                        "⚠️ send_webhook: Rate limit exceeded but no Retry-After header found"
                     );
                 }
+
+                println!(
+                    "⚠️ send_webhook: Full response headers: {:?}",
+                    resp.headers()
+                );
             } else {
-                eprintln!("Failed to send webhook: {}", resp.status());
+                eprintln!(
+                    "❌ send_webhook: Failed to send webhook: Status {}",
+                    resp.status()
+                );
+                println!("❌ send_webhook: Response headers: {:?}", resp.headers());
+
+                // Try to get response body for more details
+                match resp.text().await {
+                    Ok(body) => println!("❌ send_webhook: Response body: {}", body),
+                    Err(e) => println!("❌ send_webhook: Couldn't read response body: {}", e),
+                }
             }
         }
         Err(e) => {
-            eprintln!("Failed to send webhook: {}", e);
+            eprintln!("❌ send_webhook: Failed to send webhook: {}", e);
+            println!("❌ send_webhook: Error details: {:?}", e);
             return Err(e.into());
         }
     }
 
+    println!("🔍 send_webhook: Function completed successfully");
     Ok(())
 }
 
