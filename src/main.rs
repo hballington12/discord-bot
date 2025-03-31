@@ -214,7 +214,11 @@ async fn main() {
                     .parse::<u64>()
                     .expect("DINK_UPDATES_CHANNEL_ID must be a valid u64");
 
-                let pool = SqlitePool::connect(&env::var("DATABASE_URL")?).await?;
+                let pool_options = sqlx::sqlite::SqlitePoolOptions::new()
+                    .max_connections(30)
+                    .min_connections(10);
+
+                let pool = pool_options.connect(&env::var("DATABASE_URL")?).await?;
 
                 let res_patterns = coc::patterns::load_res_patterns();
 
