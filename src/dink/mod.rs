@@ -160,56 +160,66 @@ pub async fn process_drop(
             let garrisons_level =
                 database::get_team_building_level(pool, team.0, "garrisons").await?;
 
-            if drop.source.to_lowercase() == "lunar chest" && garrisons_level < 2 {
-                println!("Team '{}' doesn't have access to Lunar Chests", team.1);
-                send_webhook(
-                    &drop.user,
-                    false,
-                    &drop.source,
-                    Some("Team lacks access to Lunar Chests"),
-                )
-                .await?;
-                return Ok(());
-            } else if drop.source.to_lowercase() == "fortis colosseum" && garrisons_level < 3 {
-                println!("Team '{}' doesn't have access to Fortis Colosseum", team.1);
-                send_webhook(
-                    &drop.user,
-                    false,
-                    &drop.source,
-                    Some("Team lacks access to Fortis Colosseum"),
-                )
-                .await?;
-                return Ok(());
-            } else if drop.source.to_lowercase() == "tombs of amascut" && garrisons_level < 4 {
-                println!("Team '{}' doesn't have access to Tombs of Amascut", team.1);
-                send_webhook(
-                    &drop.user,
-                    false,
-                    &drop.source,
-                    Some("Team lacks access to Tombs of Amascut"),
-                )
-                .await?;
-                return Ok(());
-            } else if drop.source.to_lowercase() == "chambers of xeric" && garrisons_level < 5 {
-                println!("Team '{}' doesn't have access to Chambers of Xeric", team.1);
-                send_webhook(
-                    &drop.user,
-                    false,
-                    &drop.source,
-                    Some("Team lacks access to Chambers of Xeric"),
-                )
-                .await?;
-                return Ok(());
-            } else if drop.source.to_lowercase() == "theatre of blood" && garrisons_level < 6 {
-                println!("Team '{}' doesn't have access to Theatre of Blood", team.1);
-                send_webhook(
-                    &drop.user,
-                    false,
-                    &drop.source,
-                    Some("Team lacks access to Theatre of Blood"),
-                )
-                .await?;
-                return Ok(());
+            if drop.source.to_lowercase() == "lunar chest" {
+                if garrisons_level < 2 {
+                    println!("Team '{}' doesn't have access to Lunar Chests", team.1);
+                    send_webhook(
+                        &drop.user,
+                        false,
+                        &drop.source,
+                        Some("Team lacks access to Lunar Chests"),
+                    )
+                    .await?;
+                    return Ok(());
+                }
+            } else if drop.source.to_lowercase() == "fortis colosseum" {
+                if garrisons_level < 3 {
+                    println!("Team '{}' doesn't have access to Fortis Colosseum", team.1);
+                    send_webhook(
+                        &drop.user,
+                        false,
+                        &drop.source,
+                        Some("Team lacks access to Fortis Colosseum"),
+                    )
+                    .await?;
+                    return Ok(());
+                }
+            } else if drop.source.to_lowercase() == "tombs of amascut" {
+                if garrisons_level < 4 {
+                    println!("Team '{}' doesn't have access to Tombs of Amascut", team.1);
+                    send_webhook(
+                        &drop.user,
+                        false,
+                        &drop.source,
+                        Some("Team lacks access to Tombs of Amascut"),
+                    )
+                    .await?;
+                    return Ok(());
+                }
+            } else if drop.source.to_lowercase() == "chambers of xeric" {
+                if garrisons_level < 5 {
+                    println!("Team '{}' doesn't have access to Chambers of Xeric", team.1);
+                    send_webhook(
+                        &drop.user,
+                        false,
+                        &drop.source,
+                        Some("Team lacks access to Chambers of Xeric"),
+                    )
+                    .await?;
+                    return Ok(());
+                }
+            } else if drop.source.to_lowercase() == "theatre of blood" {
+                if garrisons_level < 6 {
+                    println!("Team '{}' doesn't have access to Theatre of Blood", team.1);
+                    send_webhook(
+                        &drop.user,
+                        false,
+                        &drop.source,
+                        Some("Team lacks access to Theatre of Blood"),
+                    )
+                    .await?;
+                    return Ok(());
+                }
             } else {
                 println!("No combat level found for source '{}'", drop.source);
                 send_webhook(&drop.user, false, &drop.source, Some("Invalid source")).await?;

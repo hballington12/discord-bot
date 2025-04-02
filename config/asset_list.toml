@@ -28,7 +28,7 @@
         [5, "runite ore", 200],
         [5, "yew logs", 4000],
         # Level 6
-        [6, "$category:cerb crystals", 2000],
+        [6, "$category:cerb crystals", 2],
         [6, "magic logs", 2500],
         [6, "iron ore", 1000],
         [6, "venator shard", 2],
@@ -44,7 +44,7 @@
         [8, "$category:araxxor uniques", 5],
         [8, "smoke battlestaff", 1],
         [8, "bones", 5000],
-        [8, "crystal", 150],
+        [8, "crystal shard", 500],
         [8, "dragon axe", 3],
         # Level 9
         [9, "$category:cox purple", 2],
@@ -69,7 +69,7 @@
         [2, "coins", 10000],
         [2, "category:ores", 250],
         [2, "category:runes", 500],
-        [2, "bracelet of ethereum", 10],
+        [2, "bracelet of ethereum", 5],
         # Level 3
         [3, "$category:herbs", 250],
         [3, "larran's key", 10],
@@ -93,15 +93,15 @@
         # Level 7
         [7, "$category:godsword shards", 2],
         [7, "coins", 250000],
-        [7, "$category:gems", 500],
+        [7, "$category:gems", 1000],
         # Level 8
-        [8, "$category:colosseum uniques", 1],
+        [8, "$category:colosseum uniques", 2],
         [8, "$category:arma uniques", 1],
         [8, "giant egg sac", 5],
         # Level 9
-        [9, "coins", 500000],
-        [9, "ancient totem", 1],
-        [9, "$category:dks rings", 5],
+        [9, "coins", 1000000],
+        [9, "ancient totem", 2],
+        [9, "$category:dks rings", 10],
         [9, "granite shield", 2],
         [9, "granite helm", 2],
     ]
@@ -123,7 +123,7 @@
         [3, "sunfire splinters", 5000],
         [3, "top of sceptre", 4],
         # Level 4
-        [4, "$category: elder chaos robes", 3],
+        [4, "$category: elder chaos robes", 6],
         [4, "long bone", 2],
         [4, "red spiders' eggs", 500],
         # Level 5
@@ -139,7 +139,7 @@
         [7, "$category:voidwaker pieces", 1],
         [7, "clue scroll (medium)", 10],
         # Level 8
-        [8, "saradomin's light", 1],
+        [8, "saradomin's light", 2],
         [8, "$category:toa purple", 1],
         # Level 9
         [9, "monkey tail", 1],
@@ -478,7 +478,7 @@
         [3, "granite legs", 1],
         [3, "rune hasta", 25],
         [3, "unsired", 2],
-        [3, "sarachnis cudgel", 50],
+        [3, "sarachnis cudgel", 1],
         # Level 4 - toa
         [4, "dragon pickaxe", 2],
         [4, "dragon chainbody", 1],
