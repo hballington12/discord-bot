@@ -500,7 +500,8 @@ pub async fn get_team_handicap_multiplier(pool: &SqlitePool, team_id: i32) -> Re
     let team_size = result.count;
 
     // Determine handicap multiplier based on team size
-    let multiplier = 6.0 / team_size as f64;
+    // Simplified handicap calculation
+    let multiplier = if team_size <= 5 { 2.0 } else { 1.0 };
 
     // println!(
     //     "Team {} has {} players with handicap multiplier {}",
@@ -562,7 +563,7 @@ pub async fn calculate_resource_total(
     let mult = get_team_resource_multiplier(pool, team_id, resource_category).await?;
     let flat_bonus = get_team_resource_flat_bonus(pool, team_id, resource_category).await?;
     let handicap = get_team_handicap_multiplier(pool, team_id).await?;
-    let handicap = 1.0; // Disable handicap for now
+    // let handicap = 1.0; // Disable handicap for now
 
     // Apply multiplier first, then add flat bonus: floor(base_amount * multiplier) + flat_bonus
     let base = base_amount as f64;
