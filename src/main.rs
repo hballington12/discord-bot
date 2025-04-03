@@ -24,7 +24,7 @@ pub struct Data {
     res_patterns: coc::patterns::PatternConfig,
     town_config: coc::buildings::TownConfig,
     bestiary: coc::bestiary::Bestiary,
-    _status_message: tokio::sync::Mutex<Option<(serenity::ChannelId, serenity::MessageId)>>,
+    status_message: tokio::sync::Mutex<Option<(serenity::ChannelId, serenity::MessageId)>>,
     webhook_receiver: TokioMutex<Option<webhook::WebhookReceiver>>,
     last_embed_update: Arc<tokio::sync::Mutex<HashMap<String, Instant>>>,
 }
@@ -116,7 +116,7 @@ async fn process_webhook(
                 // Send a simple message with the raw embed info if parsing fails
                 let message = format!(
                     "**New Event from {}**\nType: {}\n\n{}",
-                    payload.player_name, payload.r#type, description
+                    payload.playerName, payload.r#type, description
                 );
 
                 if let Err(send_err) = channel_id.say(&ctx.http, message).await {
@@ -170,7 +170,7 @@ async fn main() {
                     res_patterns,
                     town_config,
                     bestiary,
-                    _status_message: tokio::sync::Mutex::new(None),
+                    status_message: tokio::sync::Mutex::new(None),
                     webhook_receiver: TokioMutex::new(Some(webhook_receiver)),
                     last_embed_update: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
                 })

@@ -11,13 +11,13 @@ use tokio::sync::mpsc;
 #[derive(Debug, Deserialize, Serialize)]
 pub struct WebhookPayload {
     pub r#type: String, // Using r# prefix because "type" is a reserved keyword
-    pub player_name: String,
-    pub account_type: Option<String>,
-    pub dink_acc_hash: String,
-    pub clan_name: Option<String>,
-    pub seasonal_world: bool,
+    pub playerName: String,
+    pub accountType: Option<String>,
+    pub dinkAccountHash: String,
+    pub clanName: Option<String>,
+    pub seasonalWorld: bool,
     pub world: i32,
-    pub region_id: i32,
+    pub regionId: i32,
     pub extra: serde_json::Value, // Use generic Value for complex nested structures
     pub embeds: Vec<Embed>,
 }
