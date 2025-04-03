@@ -4,7 +4,7 @@
 # Town Hall - Main team building
 [assets.townhall]
     name = "Town Hall"
-    description = "The heart of your team's base. Upgrade to unlock more buildings and higher building levels."
+    description = "The main goal is to upgrade this building."
     starting_level = 1
     max_level = 9
     icon = "🏰"
@@ -16,48 +16,53 @@
         [2, "$category:bones", 500],
         [2, "coins", 100000],
         # Level 3
-        [3, "$category:dks rings", 10],
+        [3, "zenyte shard", 3],
         [3, "dragon plateskirt", 1],
         # Level 4
-        [4, "zenyte shard", 4],
-        [4, "stone", 300],
-        [4, "iron", 100],
+        [4, "$category:dks rings", 10],
+        [4, "iron ore", 300],
+        [4, "$category:runes", 5000],
         # Level 5
         [5, "kbd heads", 2],
-        [5, "$category:bandos uniques", 4],
         [5, "runite ore", 200],
         [5, "yew logs", 4000],
+        [5, "awakener's orb", 5],
         # Level 6
-        [6, "$category:cerb crystals", 2],
+        [6, "$category:bandos uniques", 4],
         [6, "magic logs", 2500],
         [6, "iron ore", 1000],
-        [6, "venator shard", 2],
         # Level 7
         [7, "$category:zulrah uniques", 3],
+        [7, "$category:cerb crystals", 2],
         [7, "$category:gems", 5000],
         [7, "$category:seeds", 10000],
         [7, "clay", 1000],
+        [7, "coins", 100000],
         [7, "soul rune", 10000],
         [7, "mithril ore", 2500],
+        [7, "venator shard", 2],
         # Level 8
         [8, "$category:toa purple", 2],
         [8, "$category:araxxor uniques", 5],
-        [8, "smoke battlestaff", 1],
         [8, "bones", 5000],
         [8, "crystal shard", 500],
         [8, "dragon axe", 3],
+        [8, "coins", 1000000],
+        [8, "awakener's orb", 20],
         # Level 9
         [9, "$category:cox purple", 2],
-        [9, "zammy uniques", 2],
-        [9, "$category:gems", 50000],
+        [9, "$category:zammy uniques", 2],
+        [9, "$category:seeds", 10000],
+        [9, "coins", 2500000],
         [9, "$category:ores", 100000],
         [9, "$category:logs", 10000],
+        [9, "vial of blood", 50],
     ]
 
 # Armory - For weapon upgrades and team equipment
 [assets.armory]
     name = "Armory"
-    description = "Allows crafting and upgrading of weapons and armor. Higher levels unlock better equipment."
+    description = "Allows you to get drops from higher level monsters"
     starting_level = 1
     max_level = 9
     icon = "⚔️"
@@ -67,9 +72,10 @@
 
         # Level 2
         [2, "coins", 10000],
-        [2, "category:ores", 250],
-        [2, "category:runes", 500],
+        [2, "&category:ores", 250],
+        [2, "&category:runes", 500],
         [2, "bracelet of ethereum", 5],
+        [2, "grapes", 1],
         # Level 3
         [3, "$category:herbs", 250],
         [3, "larran's key", 10],
@@ -80,8 +86,9 @@
         [4, "adamantite bar", 500],
         [4, "coins", 100000],
         [4, "$category:gems", 500],
+        [4, "$category:lunar chest uniques", 500],
         # Level 5
-        [5, "yew seed", 10],
+        [5, "yew seed", 20],
         [5, "brimstone key", 25],
         [5, "ballista spring", 1],
         [5, "cheese", 1],
@@ -89,16 +96,20 @@
         [6, "$category:colosseum uniques", 1],
         [6, "coins", 100000],
         [6, "kurask head", 1],
+        [6, "$category:logs", 5000],
         [6, "kraken tentacle", 1],
         # Level 7
         [7, "$category:godsword shards", 2],
         [7, "coins", 250000],
         [7, "$category:gems", 1000],
+        [7, "$category:ores", 6000],
+        [7, "willow logs", 100],
         # Level 8
-        [8, "$category:colosseum uniques", 2],
-        [8, "$category:arma uniques", 1],
+        [8, "$category:arma uniques", 2],
+        [8, "$category:gems", 10000],
         [8, "giant egg sac", 5],
         # Level 9
+        [9, "$category:colosseum uniques", 2],
         [9, "coins", 1000000],
         [9, "ancient totem", 2],
         [9, "$category:dks rings", 10],
@@ -108,7 +119,7 @@
 
 [assets.slayer_master]
     name = "Slayer Master"
-    description = "Allows access to higher level slayer tasks and rewards."
+    description = "Allows you to get loot from monsters with slayer requirements"
     starting_level = 1
     max_level = 9
     icon = "🗡️"
@@ -120,26 +131,31 @@
         [2, "bones", 100],
         [2, "scaly blue dragonhide", 5],
         # Level 3
-        [3, "sunfire splinters", 5000],
+        [3, "kurask head", 1],
         [3, "top of sceptre", 4],
         # Level 4
-        [4, "$category: elder chaos robes", 6],
+        [4, "$category:elder chaos robes", 6],
         [4, "long bone", 2],
+        [4, "sunfire splinters", 10000],
         [4, "red spiders' eggs", 500],
         # Level 5
         [5, "adamant javelin", 1000],
         [5, "dragon 2h sword", 1],
         [5, "$category:gems", 500],
+        [5, "coins", 50000],
         # Level 6
-        [6, "$category:tormented demon uniques", 2],
         [6, "onyx bolt tips", 1000],
         [6, "coins", 100000],
         [6, "$category:herbs", 1000],
+        [6, "$category:toa purple", 1],
         # Level 7 - sire
+        [7, "$category:tormented demon uniques", 2],
         [7, "$category:voidwaker pieces", 1],
         [7, "clue scroll (medium)", 10],
+        [7, "coins", 200000],
         # Level 8
         [8, "saradomin's light", 2],
+        [8, "coins", 300000],
         [8, "$category:toa purple", 1],
         # Level 9
         [9, "monkey tail", 1],
@@ -149,7 +165,7 @@
 # Treasury - For storing and managing team funds
 [assets.treasury]
     name = "Treasury"
-    description = "Obtain a percentage of coins from your team's drops. Higher levels increase the percentage."
+    description = "Multiplies coin drops"
     starting_level = 1
     max_level = 9
     icon = "💰"
@@ -157,52 +173,35 @@
     # Upgrade requirements for Treasury by level
     upgrade_costs = [
         [1, "$category:runes", 150],
-        [1, "bones", 1],
-        [1, "bones", 1],
+        [1, "coins", 1000],
         # Level 2
-        [2, "bones", 1],
-        [2, "bones", 1],
-        [2, "bones", 1],
+        [2, "coins", 5000],
+        [2, "$category:runes", 250],
         # Level 3
         [3, "ranarr seed", 20],
-        [3, "bones", 1],
+        [3, "coins", 20000],
         [3, "$category:ores", 500],
-        [3, "bones", 1],
         # Level 4
         [4, "dragon javelin heads", 150],
-        [4, "coins", 1],
-        [4, "coins", 1],
-        [4, "coins", 1],
+        [4, "coins", 50000],
         # Level 5
-        [5, "coins", 5],
-        [5, "coins", 5],
-        [5, "coins", 5],
-        [5, "coins", 5],
+        [5, "coins", 50000],
+        [5, "$category:runes", 500],
         # Level 6
-        [6, "coins", 10],
-        [6, "coins", 10],
         [6, "chromium ingot", 1],
-        [6, "coins", 10],
-        [6, "coins", 10],
         # Level 7
         [7, "abyssal whip", 1],
-        [7, "coins", 20],
-        [7, "coins", 20],
+        [7, "$category:runes", 5000],
         # Level 8
-        [8, "coins", 40],
-        [8, "coins", 40],
-        [8, "coins", 40],
-        [8, "coins", 40],
+        [8, "sunfire splinters", 30000],
         # Level 9
-        [9, "vial of blood", 80],
-        [9, "coins", 80],
-        [9, "coins", 80],
+        [9, "vial of blood", 10],
     ]
 
 # Prospector's Shop - For enhancing mining resources
 [assets.prospector_shop]
     name = "Prospector's Shop"
-    description = "Improves mining yields and unlocks special ore processing methods. Higher levels yield more resources per mining action."
+    description = "Multiplies ore drops"
     starting_level = 1
     max_level = 9
     icon = "⛏️"
@@ -212,33 +211,21 @@
         [1, "bones", 1],
         # Level 2
         [2, "sapphire ring", 5],
-        [2, "iron", 10],
+        [2, "blood rune", 100],
         # Level 3
-        [3, "bones", 5],
-        [3, "iron", 50],
+        [3, "magic logs", 100],
         # Level 4
-        [4, "coins", 5],
-        [4, "iron", 150],
+        [4, "ancient staff", 1],
         # Level 5
-        [5, "coins", 10],
-        [5, "iron", 300],
+        [5, "gold ore", 1000],
         # Level 6
-        [6, "coins", 20],
-        [6, "iron", 600],
-        [6, "crystal", 5],
+        [6, "coins", 100000],
         # Level 7
         [7, "rune boots", 5],
-        [7, "iron", 1200],
-        [7, "crystal", 15],
         # Level 8
-        [8, "coins", 80],
-        [8, "iron", 2400],
-        [8, "crystal", 30],
+        [8, "coins", 300000],
         # Level 9
-        [9, "coins", 160],
-        [9, "iron", 4800],
-        [9, "crystal", 60],
-        [9, "ancient_core", 1],
+        [9, "dragon arrowtips", 500],
     ]
 
 # Herbalist's Hut - For enhancing herblore resources
@@ -253,40 +240,27 @@
     upgrade_costs = [
         [1, "$category:bones", 100],
         # Level 2
-        [2, "bones", 2],
         [2, "grimy guam", 2],
         # Level 3
-        [3, "bones", 5],
         [3, "grimy marrentil", 5],
         # Level 4
-        [4, "coins", 5],
-        [4, "ur mom", 150],
+        [4, "splitbark legs", 2],
         # Level 5
-        [5, "coins", 10],
-        [5, "herbs", 300],
+        [5, "unidentified small fossil", 25],
         # Level 6
-        [6, "coins", 20],
-        [6, "herbs", 600],
-        [6, "crystal", 5],
+        [6, "crystal key", 2],
         # Level 7
-        [7, "coins", 40],
-        [7, "herbs", 1200],
-        [7, "crystal", 15],
+        [7, "glacial temotli", 2],
         # Level 8
-        [8, "coins", 80],
-        [8, "herbs", 2400],
-        [8, "crystal", 30],
+        [8, "dragon halberd", 4],
         # Level 9
-        [9, "coins", 160],
-        [9, "herbs", 4800],
-        [9, "crystal", 60],
-        [9, "ancient_core", 1],
+        [9, "guam seed", 1000],
     ]
 
 # Woodcutter's Lodge - For enhancing woodcutting resources
 [assets.woodcutter_lodge]
     name = "Woodcutter's Lodge"
-    description = "Improves woodcutting efficiency and wood processing. Higher levels provide access to rare trees and lumber."
+    description = "Multiplies log drops"
     starting_level = 1
     max_level = 9
     icon = "🪓"
@@ -295,34 +269,21 @@
     upgrade_costs = [
         [1, "$category:gems", 10],
         # Level 2
-        [2, "bones", 2],
-        [2, "wood", 10],
+        [2, "$category:runes", 750],
         # Level 3
-        [3, "bones", 5],
-        [3, "wood", 50],
+        [3, "nature rune", 1000],
         # Level 4
-        [4, "coins", 5],
-        [4, "wood", 150],
+        [4, "oak plank", 200],
         # Level 5
-        [5, "ancient crystal", 1],
-        [5, "wood", 300],
+        [5, "mahogany plank", 400],
         # Level 6
         [6, "berserker ring", 1],
-        [6, "coins", 25000],
-        [6, "crystal", 5],
         # Level 7
-        [7, "coins", 40],
-        [7, "wood", 1200],
-        [7, "crystal", 15],
+        [7, "seers ring", 1],
         # Level 8
-        [8, "coins", 80],
-        [8, "wood", 2400],
-        [8, "crystal", 30],
+        [8, "light frame", 1],
         # Level 9
-        [9, "coins", 160],
-        [9, "wood", 4800],
-        [9, "crystal", 60],
-        [9, "ancient_core", 1],
+        [9, "aranea boots", 1],
     ]
 
 # Farming Guild - For enhancing farming resources
@@ -343,42 +304,26 @@
         [2, "$category:coins", 25000],
         # Level 3
         [3, "iron halberd", 2],
-        [3, "seeds", 50],
-        [3, "seeds", 50],
+        [3, "body rune", 5000],
         # Level 4
-        [4, "coins", 5],
-        [4, "seeds", 150],
-        [4, "seeds", 150],
+        [4, "coins", 100000],
         # Level 5
-        [5, "coins", 10],
-        [4, "seeds", 150],
-        [4, "seeds", 150],
+        [5, "coins", 200000],
         # Level 6
-        [6, "coins", 20],
-        [6, "seeds", 600],
-        [6, "seeds", 600],
+        [6, "mole skin", 200],
         # Level 7
-        [7, "coins", 40],
-        [7, "seeds", 1200],
-        [7, "seeds", 1200],
-        [7, "seeds", 1200],
+        [7, "lily of the sands", 200],
         # Level 8
-        [8, "coins", 80],
-        [8, "seeds", 2400],
-        [8, "seeds", 2400],
-        [8, "seeds", 2400],
+        [8, "coins", 300000],
         # Level 9
         [9, "bottomless compost bucket", 160],
-        [9, "seeds", 4800],
-        [9, "seeds", 4800],
-        [9, "seeds", 4800],
     ]
 
 
 # Magic Workshop - For enhancing runecrafting and enchanting
 [assets.rune_shop]
     name = "Rune Shop"
-    description = "Multiplies rune resources."
+    description = "Multiplies rune drops"
     starting_level = 1
     max_level = 9
     icon = "✨"
@@ -386,41 +331,28 @@
     # Upgrade requirements for Magic Workshop by level
     upgrade_costs = [
         [1, "$category:herbs", 50],
-        [1, "coins", 2500],
         # Level 2
-        [2, "bones", 2],
-        [2, "runes", 5],
+        [2, "steel bar", 50],
         # Level 3
-        [3, "bones", 5],
-        [3, "runes", 50],
+        [3, "mahogany logs", 123],
         # Level 4
-        [4, "coins", 5],
-        [4, "runes", 150],
+        [4, "zombie pirate key", 10],
         # Level 5
-        [5, "coins", 10],
-        [5, "runes", 300],
+        [5, "sinister key", 2],
         # Level 6
-        [6, "coins", 20],
-        [6, "runes", 600],
-        [6, "bones", 5],
+        [6, "mole claw", 100],
         # Level 7
-        [7, "coins", 40],
-        [7, "ores", 10],
-        [7, "gems", 15],
         [7, "dark claw", 1],
         # Level 8
-        [8, "coins", 80],
-        [8, "gems", 30],
+        [8, "ancient icon", 2],
         # Level 9
-        [9, "coins", 160],
-        [9, "coins", 160],
-        [9, "coins", 160],
+        [9, "hueycoatl hide", 2],
     ]
 
 # Crafting Guild - For enhancing crafting resources
 [assets.crafting_guild]
     name = "Crafting Guild"
-    description = "Specializes in crafting various items from textiles, gems, and leather. Higher levels unlock complex patterns and rare materials."
+    description = "Multiplies gem drops"
     starting_level = 1
     max_level = 9
     icon = "🧵"
@@ -431,34 +363,20 @@
         [1, "pure essence", 500],
         # Level 2
         [2, "scurrius' spine", 1],
-        [2, "gems", 1],
         # Level 3
-        [3, "gems", 1],
-        [3, "gems", 1],
+        [3, "blighted manta ray", 200],
         # Level 4
-        [4, "gems", 1],
-        [4, "gems", 1],
-        [4, "gems", 1],
+        [4, "splitbark body", 1],
         # Level 5
-        [5, "gems", 5],
-        [5, "gems", 5],
-        [5, "gems", 5],
+        [5, "coins", 50000],
         # Level 6
         [6, "tzhaar-ket-om", 1],
-        [6, "gems", 10],
-        [6, "gems", 10],
         # Level 7
-        [7, "gems", 20],
-        [7, "gems", 20],
-        [7, "gems", 20],
+        [7, "dynamite", 500],
         # Level 8
-        [8, "gems", 40],
-        [8, "gems", 40],
-        [8, "gems", 40],
+        [8, "dragon boots", 2],
         # Level 9
-        [9, "gems", 80],
-        [9, "gems", 80],
-        [9, "gems", 80],
+        [9, "$category:any quartz", 2],
     ]
 
 [assets.garrisons]
@@ -468,7 +386,6 @@
     max_level = 5
     icon = "🏯"
 
-    # Upgrade requirements for Garrisons by level
     upgrade_costs = [
         # Level 2 - lunar chests
         [2, "$category:leaf-bladed items", 3],
@@ -477,20 +394,25 @@
         # Level 3 - colosseum
         [3, "granite legs", 1],
         [3, "rune hasta", 25],
-        [3, "unsired", 2],
+        [3, "$category:runes", 5000],
         [3, "sarachnis cudgel", 1],
         # Level 4 - toa
+        [4, "unsired", 2],
         [4, "dragon pickaxe", 2],
         [4, "dragon chainbody", 1],
         [4, "dragon platelegs", 20],
         [4, "dragon med helm", 5],
+        [4, "$category:logs", 10000],
         [4, "shield left half", 1],
         # Level 5 - cox
         [5, "fedora", 1],
         [5, "spirit shield", 1],
-        [5, "$category:malediction/odium shards", 100],
+        [5, "$category:gems", 1337],
+        [5, "$category:malediction/odium shards", 10],
         # Level 5 - tob
         [6, "fedora", 1],
         [6, "spirit shield", 1],
-        [6, "$category:malediction/odium shards", 100],
-    ]
+        [6, "mist rune", 6969],
+        [6, "$category:malediction/odium shards", 5],
+        [6, "occult necklace", 2],
+    ] # Upgrade requirements for Garrisons by level
