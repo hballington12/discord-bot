@@ -156,7 +156,6 @@ pub async fn process_drop(
             }
         }
         None => {
-            println!("No combat level found for source '{}'", drop.source);
             let garrisons_level =
                 database::get_team_building_level(pool, team.0, "garrisons").await?;
 
@@ -184,7 +183,9 @@ pub async fn process_drop(
                     .await?;
                     return Ok(());
                 }
-            } else if drop.source.to_lowercase() == "tombs of amascut" {
+            } else if drop.source.to_lowercase() == "tombs of amascut"
+                || drop.source.to_lowercase() == "tombs of amascut: expert mode"
+            {
                 if garrisons_level < 4 {
                     println!("Team '{}' doesn't have access to Tombs of Amascut", team.1);
                     send_webhook(
