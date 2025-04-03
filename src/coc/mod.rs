@@ -1,8 +1,8 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
-use crate::{Context, Data, Error};
+use crate::{Data, Error};
 use poise::serenity_prelude as serenity;
-use serenity::builder::{CreateAttachment, CreateEmbed, CreateEmbedFooter, CreateMessage};
+use serenity::builder::{CreateEmbed, CreateEmbedFooter, CreateMessage};
 use serenity::model::Timestamp;
 
 pub mod bestiary;

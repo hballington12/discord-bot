@@ -160,6 +160,7 @@ impl Bestiary {
     }
 
     /// Get all monsters within a specific combat level range
+    #[allow(dead_code)]
     pub fn get_monsters_in_level_range(
         &self,
         min_level: u32,
@@ -173,6 +174,7 @@ impl Bestiary {
     }
 
     /// Get all monsters with a specific slayer level requirement
+    #[allow(dead_code)]
     pub fn get_monsters_by_slayer_level(&self, slayer_level: u32) -> Vec<(&String, u32)> {
         self.monster_slayer_levels
             .iter()
@@ -182,11 +184,13 @@ impl Bestiary {
     }
 
     /// Get the number of monsters in the bestiary
+    #[allow(dead_code)]
     pub fn count(&self) -> usize {
         self.monster_levels.len()
     }
 
     /// Find monsters whose names contain the given search string (case-insensitive)
+    #[allow(dead_code)]
     pub fn search_monsters(&self, search: &str) -> Vec<(&String, u32)> {
         let search_lower = search.to_lowercase();
         self.monster_levels

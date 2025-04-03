@@ -1,10 +1,6 @@
-use crate::{Data, Error};
+use crate::Error;
 
-use crate::coc::get_team;
 use crate::Context;
-use ::serenity::all::CreateEmbed;
-use poise::serenity_prelude as serenity;
-use std::collections::HashMap;
 
 /// Looks up a specific resource for a team
 #[poise::command(slash_command, prefix_command, guild_only)]

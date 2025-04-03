@@ -1,8 +1,5 @@
 use poise::serenity_prelude as serenity;
 use reqwest::Client;
-use std::collections::HashMap;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 
 use crate::coc::commands::update_team_embeds;
 use crate::coc::database::{
@@ -10,7 +7,7 @@ use crate::coc::database::{
     insert_new_resource, update_resource_quantity,
 };
 use crate::coc::{self, database};
-use crate::{Context, Data, Error};
+use crate::{Data, Error};
 
 #[cfg(test)]
 mod tests {
@@ -270,7 +267,6 @@ pub async fn process_drop(
     if update_needed {
         println!("Updating team embeds for '{}'", team_name);
         update_team_embeds(ctx, data, team_name).await?;
-        println!("Team embeds updated");
     } else {
         println!("Skipping team embed update (throttled) for '{}'", team_name);
     }

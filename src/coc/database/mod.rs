@@ -573,6 +573,7 @@ pub async fn calculate_resource_total(
         "Resource calculation: base={}, mult={:.2}, flat={:.2}, handicap={:.2}, GLOB_MULT={:.2}, total={}",
         base, mult, flat, handicap, GLOB_MULT, (((base * mult).floor() + flat) * handicap * GLOB_MULT).floor() as i32
     );
+
     let total = (((base * mult).floor() + flat) * handicap * GLOB_MULT).ceil() as i32;
 
     Ok(total)

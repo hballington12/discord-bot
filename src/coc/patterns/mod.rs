@@ -45,6 +45,7 @@ pub fn get_resource_category(input: &str, patterns: &[ResourcePattern]) -> Strin
 }
 
 /// Wrapper function that loads patterns and gets category in one step
+#[allow(dead_code)]
 pub fn categorize_resource(input: &str) -> String {
     let patterns = load_res_patterns();
     get_resource_category(input, &patterns.resource_pattern)

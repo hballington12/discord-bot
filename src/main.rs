@@ -13,7 +13,6 @@ use std::{
 
 use ::serenity::all::GatewayIntents;
 use poise::serenity_prelude as serenity;
-use sqlx::SqlitePool;
 use tokio::sync::Mutex as TokioMutex;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -25,7 +24,7 @@ pub struct Data {
     res_patterns: coc::patterns::PatternConfig,
     town_config: coc::buildings::TownConfig,
     bestiary: coc::bestiary::Bestiary,
-    status_message: tokio::sync::Mutex<Option<(serenity::ChannelId, serenity::MessageId)>>,
+    _status_message: tokio::sync::Mutex<Option<(serenity::ChannelId, serenity::MessageId)>>,
     webhook_receiver: TokioMutex<Option<webhook::WebhookReceiver>>,
     last_embed_update: Arc<tokio::sync::Mutex<HashMap<String, Instant>>>,
 }
@@ -117,7 +116,7 @@ async fn process_webhook(
                 // Send a simple message with the raw embed info if parsing fails
                 let message = format!(
                     "**New Event from {}**\nType: {}\n\n{}",
-                    payload.playerName, payload.r#type, description
+                    payload.player_name, payload.r#type, description
                 );
 
                 if let Err(send_err) = channel_id.say(&ctx.http, message).await {
@@ -171,7 +170,7 @@ async fn main() {
                     res_patterns,
                     town_config,
                     bestiary,
-                    status_message: tokio::sync::Mutex::new(None),
+                    _status_message: tokio::sync::Mutex::new(None),
                     webhook_receiver: TokioMutex::new(Some(webhook_receiver)),
                     last_embed_update: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
                 })

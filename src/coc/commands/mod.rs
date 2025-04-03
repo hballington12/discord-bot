@@ -1,16 +1,12 @@
 use crate::{
     coc::{
         self,
-        database::{
-            get_resource_quantity_by_name, get_team_by_name, insert_new_resource,
-            update_resource_quantity,
-        },
+        database::{get_resource_quantity_by_name, insert_new_resource, update_resource_quantity},
         get_team,
     },
     Context, Data, Error,
 };
 
-use ::serenity::all::CreateEmbed;
 use poise::serenity_prelude as serenity;
 
 mod embed;

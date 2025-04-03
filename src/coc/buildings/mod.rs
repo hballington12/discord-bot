@@ -91,6 +91,7 @@ impl TownConfig {
     }
 
     /// Get upgrade costs as a HashMap for backward compatibility
+    #[allow(dead_code)]
     pub fn get_upgrade_costs_map(&self, building_type: &str, level: u32) -> HashMap<String, u32> {
         let mut costs = HashMap::new();
 
@@ -110,11 +111,13 @@ impl TownConfig {
     }
 
     /// Check if a cost is a category-based cost
+    #[allow(dead_code)]
     pub fn is_category_cost(&self, cost_key: &str) -> bool {
         cost_key.starts_with("$category:")
     }
 
     /// Extract the category name from a category cost key
+    #[allow(dead_code)]
     pub fn extract_category_name(&self, cost_key: &str) -> Option<String> {
         if self.is_category_cost(cost_key) {
             Some(cost_key.trim_start_matches("$category:").to_string())
@@ -138,6 +141,7 @@ pub fn init_assets() -> Result<TownConfig, Box<dyn std::error::Error>> {
 }
 
 /// Helper function to format upgrade costs for display
+#[allow(dead_code)]
 pub fn format_upgrade_costs(costs: &[UpgradeCost]) -> Vec<String> {
     costs
         .iter()
