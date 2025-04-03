@@ -5,9 +5,10 @@ mod utils;
 mod webhook;
 
 use std::{
+    collections::HashMap,
     env::{self, var},
     sync::Arc,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use ::serenity::all::GatewayIntents;
@@ -26,6 +27,7 @@ pub struct Data {
     bestiary: coc::bestiary::Bestiary,
     status_message: tokio::sync::Mutex<Option<(serenity::ChannelId, serenity::MessageId)>>,
     webhook_receiver: TokioMutex<Option<webhook::WebhookReceiver>>,
+    last_embed_update: Arc<tokio::sync::Mutex<HashMap<String, Instant>>>,
 }
 
 async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
@@ -139,70 +141,6 @@ async fn main() {
 
     let (_webhook_sender, webhook_receiver) = webhook::start_webhook_server(webhook_port).await;
 
-    let options = poise::FrameworkOptions {
-        commands: vec![
-            commands::age(),
-            coc::commands::list_teams(),
-            coc::commands::add_player(),
-            coc::commands::add_team(),
-            coc::commands::remove_team(),
-            coc::commands::remove_player(),
-            coc::commands::create_resource_embed(),
-            coc::commands::list_team_resources(),
-            coc::commands::upgrade_building(),
-            coc::commands::create_buildings_embed(),
-            coc::commands::downgrade_building(),
-            coc::commands::helper::lookup_resource(),
-            coc::commands::helper::lookup_category(),
-            coc::commands::buildings_overview(),
-            coc::commands::force_upgrade_building(),
-            coc::commands::force_insert_resource(),
-            commands::simple_embed(),
-            commands::edit_embed(),
-        ],
-        prefix_options: poise::PrefixFrameworkOptions {
-            prefix: Some("~".into()),
-            edit_tracker: Some(Arc::new(poise::EditTracker::for_timespan(
-                Duration::from_secs(3600),
-            ))),
-            additional_prefixes: vec![
-                poise::Prefix::Literal("hey bot,"),
-                poise::Prefix::Literal("hey bot"),
-            ],
-            ..Default::default()
-        },
-        on_error: |error| Box::pin(on_error(error)),
-        pre_command: |ctx| {
-            Box::pin(async move {
-                println!("Executing command {}...", ctx.command().qualified_name);
-            })
-        },
-        post_command: |ctx| {
-            Box::pin(async move {
-                println!("Executed command {}!", ctx.command().qualified_name);
-            })
-        },
-        command_check: Some(|ctx| {
-            Box::pin(async move {
-                if ctx.author().id == 123456789 {
-                    return Ok(false);
-                }
-                Ok(true)
-            })
-        }),
-        skip_checks_for_owners: false,
-        event_handler: |ctx, event, framework, data| {
-            let _ = Box::pin(async move {
-                println!(
-                    "Got an event in event handler: {:?}",
-                    event.snake_case_name()
-                );
-            });
-            Box::pin(event_handler(ctx, event, framework, data))
-        },
-        ..Default::default()
-    };
-
     let framework = poise::Framework::builder()
         .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
@@ -235,10 +173,73 @@ async fn main() {
                     bestiary,
                     status_message: tokio::sync::Mutex::new(None),
                     webhook_receiver: TokioMutex::new(Some(webhook_receiver)),
+                    last_embed_update: Arc::new(tokio::sync::Mutex::new(HashMap::new())),
                 })
             })
         })
-        .options(options)
+        .options(poise::FrameworkOptions {
+            commands: vec![
+                commands::age(),
+                coc::commands::list_teams(),
+                coc::commands::add_player(),
+                coc::commands::add_team(),
+                coc::commands::remove_team(),
+                coc::commands::remove_player(),
+                coc::commands::create_resource_embed(),
+                coc::commands::list_team_resources(),
+                coc::commands::upgrade_building(),
+                coc::commands::create_buildings_embed(),
+                coc::commands::downgrade_building(),
+                coc::commands::helper::lookup_resource(),
+                coc::commands::helper::lookup_category(),
+                coc::commands::buildings_overview(),
+                coc::commands::force_upgrade_building(),
+                coc::commands::force_insert_resource(),
+                commands::simple_embed(),
+                commands::edit_embed(),
+            ],
+            prefix_options: poise::PrefixFrameworkOptions {
+                prefix: Some("~".into()),
+                edit_tracker: Some(Arc::new(poise::EditTracker::for_timespan(
+                    Duration::from_secs(3600),
+                ))),
+                additional_prefixes: vec![
+                    poise::Prefix::Literal("hey bot,"),
+                    poise::Prefix::Literal("hey bot"),
+                ],
+                ..Default::default()
+            },
+            on_error: |error| Box::pin(on_error(error)),
+            pre_command: |ctx| {
+                Box::pin(async move {
+                    println!("Executing command {}...", ctx.command().qualified_name);
+                })
+            },
+            post_command: |ctx| {
+                Box::pin(async move {
+                    println!("Executed command {}!", ctx.command().qualified_name);
+                })
+            },
+            command_check: Some(|ctx| {
+                Box::pin(async move {
+                    if ctx.author().id == 123456789 {
+                        return Ok(false);
+                    }
+                    Ok(true)
+                })
+            }),
+            skip_checks_for_owners: false,
+            event_handler: |ctx, event, framework, data| {
+                let _ = Box::pin(async move {
+                    println!(
+                        "Got an event in event handler: {:?}",
+                        event.snake_case_name()
+                    );
+                });
+                Box::pin(event_handler(ctx, event, framework, data))
+            },
+            ..Default::default()
+        })
         .build();
 
     dotenv::dotenv().expect("Failed to load .env file");

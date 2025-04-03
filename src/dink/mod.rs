@@ -1,5 +1,8 @@
 use poise::serenity_prelude as serenity;
 use reqwest::Client;
+use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 use crate::coc::commands::update_team_embeds;
 use crate::coc::database::{
@@ -260,9 +263,18 @@ pub async fn process_drop(
         }
     }
 
-    println!("attempting to update team embeds");
-    update_team_embeds(ctx, data, &team.1).await?;
-    println!("team embeds updated");
+    // Throttle embed updates - only update after certain time interval
+    let team_name = &team.1;
+    let update_needed = should_update_team_embeds(data, team_name).await;
+
+    if update_needed {
+        println!("Updating team embeds for '{}'", team_name);
+        update_team_embeds(ctx, data, team_name).await?;
+        println!("Team embeds updated");
+    } else {
+        println!("Skipping team embed update (throttled) for '{}'", team_name);
+    }
+
     send_webhook(
         &drop.user,
         true,
@@ -272,6 +284,28 @@ pub async fn process_drop(
     .await?;
 
     Ok(())
+}
+
+// Add to Data struct a field:
+// last_embed_update: Arc<tokio::sync::Mutex<HashMap<String, Instant>>>
+
+async fn should_update_team_embeds(data: &Data, team_name: &str) -> bool {
+    let mut updates = data.last_embed_update.lock().await;
+    let now = std::time::Instant::now();
+
+    // Only update embeds once every 30 seconds per team
+    const UPDATE_INTERVAL: std::time::Duration = std::time::Duration::from_secs(30);
+
+    if let Some(last_update) = updates.get(team_name) {
+        if now.duration_since(*last_update) < UPDATE_INTERVAL {
+            return false;
+        }
+    }
+
+    // Update the timestamp for this team
+    updates.insert(team_name.to_string(), now);
+    println!("Updated last embed update time for team '{}'", team_name);
+    true
 }
 
 /// Sends a Discord webhook message.
