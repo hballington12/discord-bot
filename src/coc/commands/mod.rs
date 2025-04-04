@@ -63,6 +63,7 @@ pub async fn list_teams(ctx: Context<'_>) -> Result<(), Error> {
 pub async fn add_team(
     ctx: Context<'_>,
     #[description = "Name of the team to create"] team_name: String,
+    #[description = "Handicap value for the team (default: 1)"] handicap: Option<i32>,
 ) -> Result<(), Error> {
     // Get database connection from context data
     let pool = &ctx.data().database;
@@ -90,8 +91,21 @@ pub async fn add_team(
     let next_id = crate::coc::database::get_max_team_id(pool).await? + 1;
     println!("next id: {}", next_id);
 
+    // Use provided handicap or default to 1
+    let handicap = handicap.unwrap_or(1);
+
+    if handicap < 1 || handicap > 5 {
+        ctx.send(
+            poise::CreateReply::default()
+                .content("Handicap must be between 1 and 5.")
+                .ephemeral(true),
+        )
+        .await?;
+        return Ok(());
+    }
+
     // Insert the team into the database
-    crate::coc::database::insert_team(pool, next_id, &team_name).await?;
+    crate::coc::database::insert_team(pool, next_id, &team_name, handicap).await?;
 
     // Insert a new set of buildings into the database
     let town_config = &ctx.data().town_config;
@@ -119,8 +133,8 @@ pub async fn add_team(
 
     // This message should be public as it's a positive notification
     ctx.say(format!(
-        "Team '{}' created successfully! (ID: {})",
-        team_name, next_id
+        "Team '{}' created successfully! (ID: {}, Handicap: {})",
+        team_name, next_id, handicap
     ))
     .await?;
     Ok(())

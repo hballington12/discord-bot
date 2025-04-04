@@ -221,13 +221,19 @@ pub async fn get_max_team_id(pool: &SqlitePool) -> Result<i32, Error> {
     Ok(max_id_result.max_id.unwrap_or(0))
 }
 
-pub async fn insert_team(pool: &SqlitePool, team_id: i32, team_name: &str) -> Result<(), Error> {
+pub async fn insert_team(
+    pool: &SqlitePool,
+    team_id: i32,
+    team_name: &str,
+    handicap: i32,
+) -> Result<(), Error> {
     sqlx::query!(
         r#"
-        INSERT INTO teams (id, name) VALUES ($1, $2)
+        INSERT INTO teams (id, name, handicap) VALUES ($1, $2, $3)
         "#,
         team_id,
-        team_name
+        team_name,
+        handicap
     )
     .execute(pool)
     .await?;
@@ -485,30 +491,25 @@ pub async fn mark_embed_as_deleted(pool: &SqlitePool, embed_id: i32) -> Result<(
 /// Get the team handicap multiplier based on the number of players in the team
 /// Returns a multiplier value to help balance gameplay for different team sizes
 pub async fn get_team_handicap_multiplier(pool: &SqlitePool, team_id: i32) -> Result<f64, Error> {
-    // Count the number of players in the team
+    // Get the handicap value directly from the teams table
     let result = sqlx::query!(
         r#"
-        SELECT COUNT(*) as "count: i32" 
-        FROM team_members
-        WHERE team_id = ?
+        SELECT handicap as "handicap: i32" 
+        FROM teams
+        WHERE id = ?
         "#,
         team_id
     )
-    .fetch_one(pool)
+    .fetch_optional(pool)
     .await?;
 
-    let team_size = result.count;
+    // Convert handicap to multiplier (handicap is stored as an integer)
+    let handicap = match result {
+        Some(row) => row.handicap as f64,
+        None => 1.0, // Default to 1.0 if team not found
+    };
 
-    // Determine handicap multiplier based on team size
-    // Simplified handicap calculation
-    let multiplier = if team_size <= 5 { 2.0 } else { 1.0 };
-
-    // println!(
-    //     "Team {} has {} players with handicap multiplier {}",
-    //     team_id, team_size, multiplier
-    // );
-
-    Ok(multiplier)
+    Ok(handicap)
 }
 
 /// Get a team's multiplier for a specific resource category
