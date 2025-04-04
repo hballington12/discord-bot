@@ -16,8 +16,8 @@
         [2, "$category:bones", 500],
         [2, "coins", 100000],
         # Level 3
-        [3, "zenyte shard", 3],
-        [3, "dragon plateskirt", 1],
+        [3, "zenyte shard", 4],
+        [3, "dragon plateskirt", 2],
         # Level 4
         [4, "$category:dks rings", 10],
         [4, "iron ore", 300],
@@ -26,13 +26,13 @@
         [5, "kbd heads", 2],
         [5, "runite ore", 200],
         [5, "yew logs", 4000],
-        [5, "awakener's orb", 5],
+        [5, "awakener's orb", 6],
         # Level 6
         [6, "$category:bandos uniques", 4],
         [6, "magic logs", 2500],
         [6, "iron ore", 1000],
         # Level 7
-        [7, "$category:zulrah uniques", 3],
+        [7, "$category:zulrah uniques", 4],
         [7, "$category:cerb crystals", 2],
         [7, "$category:gems", 5000],
         [7, "$category:seeds", 10000],
@@ -43,7 +43,7 @@
         [7, "venator shard", 2],
         # Level 8
         [8, "$category:toa purple", 2],
-        [8, "$category:araxxor uniques", 5],
+        [8, "$category:araxxor uniques", 4],
         [8, "bones", 5000],
         [8, "crystal shard", 500],
         [8, "dragon axe", 3],
@@ -74,30 +74,30 @@
         [2, "coins", 10000],
         [2, "&category:ores", 250],
         [2, "&category:runes", 500],
-        [2, "bracelet of ethereum", 5],
-        [2, "grapes", 1],
+        [2, "bracelet of ethereum", 4],
+        [2, "grapes", 2],
         # Level 3
         [3, "$category:herbs", 250],
         [3, "larran's key", 10],
         [3, "$category:seeds", 500],
-        [3, "long bone", 1],
-        [3, "mole claw", 5],
+        [3, "long bone", 2],
+        [3, "mole claw", 4],
         # Level 4
         [4, "adamantite bar", 500],
         [4, "coins", 100000],
         [4, "$category:gems", 500],
-        [4, "$category:lunar chest uniques", 500],
+        [4, "$category:lunar chest uniques", 6],
         # Level 5
         [5, "yew seed", 20],
         [5, "brimstone key", 25],
-        [5, "ballista spring", 1],
-        [5, "cheese", 1],
+        [5, "ballista spring", 2],
+        [5, "cheese", 2],
         # Level 6
-        [6, "$category:colosseum uniques", 1],
+        [6, "$category:colosseum uniques", 2],
         [6, "coins", 100000],
         [6, "kurask head", 1],
         [6, "$category:logs", 5000],
-        [6, "kraken tentacle", 1],
+        [6, "kraken tentacle", 2],
         # Level 7
         [7, "$category:godsword shards", 2],
         [7, "coins", 250000],
@@ -131,7 +131,7 @@
         [2, "bones", 100],
         [2, "scaly blue dragonhide", 5],
         # Level 3
-        [3, "kurask head", 1],
+        [3, "crawling hand", 2],
         [3, "top of sceptre", 4],
         # Level 4
         [4, "$category:elder chaos robes", 6],
@@ -140,25 +140,25 @@
         [4, "red spiders' eggs", 500],
         # Level 5
         [5, "adamant javelin", 1000],
-        [5, "dragon 2h sword", 1],
+        [5, "dragon 2h sword", 2],
         [5, "$category:gems", 500],
         [5, "coins", 50000],
         # Level 6
         [6, "onyx bolt tips", 1000],
         [6, "coins", 100000],
         [6, "$category:herbs", 1000],
-        [6, "$category:toa purple", 1],
+        [6, "$category:toa purple", 2],
         # Level 7 - sire
         [7, "$category:tormented demon uniques", 2],
-        [7, "$category:voidwaker pieces", 1],
+        [7, "$category:voidwaker pieces", 2],
         [7, "clue scroll (medium)", 10],
         [7, "coins", 200000],
         # Level 8
         [8, "saradomin's light", 2],
         [8, "coins", 300000],
-        [8, "$category:toa purple", 1],
+        [8, "$category:toa purple", 2],
         # Level 9
-        [9, "monkey tail", 1],
+        [9, "runite bar", 300],
         [9, "coins", 500000],
     ]
 
@@ -190,7 +190,7 @@
         # Level 6
         [6, "chromium ingot", 1],
         # Level 7
-        [7, "abyssal whip", 1],
+        [7, "abyssal whip", 2],
         [7, "$category:runes", 5000],
         # Level 8
         [8, "sunfire splinters", 30000],
@@ -208,20 +208,20 @@
 
     # Upgrade requirements for Prospector's Shop by level
     upgrade_costs = [
-        [1, "bones", 1],
+        [1, "bones", 50],
         # Level 2
         [2, "sapphire ring", 5],
         [2, "blood rune", 100],
         # Level 3
         [3, "magic logs", 100],
         # Level 4
-        [4, "ancient staff", 1],
+        [4, "ancient staff", 2],
         # Level 5
         [5, "gold ore", 1000],
         # Level 6
         [6, "coins", 100000],
         # Level 7
-        [7, "rune boots", 5],
+        [7, "rune boots", 6],
         # Level 8
         [8, "coins", 300000],
         # Level 9
@@ -277,13 +277,13 @@
         # Level 5
         [5, "mahogany plank", 400],
         # Level 6
-        [6, "berserker ring", 1],
+        [6, "berserker ring", 2],
         # Level 7
-        [7, "seers ring", 1],
+        [7, "seers ring", 2],
         # Level 8
-        [8, "light frame", 1],
+        [8, "light frame", 2],
         # Level 9
-        [9, "aranea boots", 1],
+        [9, "aranea boots", 2],
     ]
 
 # Farming Guild - For enhancing farming resources
@@ -316,7 +316,7 @@
         # Level 8
         [8, "coins", 300000],
         # Level 9
-        [9, "bottomless compost bucket", 160],
+        [9, "bottomless compost bucket", 2],
     ]
 
 
@@ -342,7 +342,7 @@
         # Level 6
         [6, "mole claw", 100],
         # Level 7
-        [7, "dark claw", 1],
+        [7, "dark claw", 2],
         # Level 8
         [8, "ancient icon", 2],
         # Level 9
@@ -362,15 +362,15 @@
         [1, "coins", 1000],
         [1, "pure essence", 500],
         # Level 2
-        [2, "scurrius' spine", 1],
+        [2, "scurrius' spine", 6],
         # Level 3
         [3, "blighted manta ray", 200],
         # Level 4
-        [4, "splitbark body", 1],
+        [4, "splitbark body", 2],
         # Level 5
         [5, "coins", 50000],
         # Level 6
-        [6, "tzhaar-ket-om", 1],
+        [6, "tzhaar-ket-om", 2],
         # Level 7
         [7, "dynamite", 500],
         # Level 8
@@ -389,29 +389,28 @@
     upgrade_costs = [
         # Level 2 - lunar chests
         [2, "$category:leaf-bladed items", 3],
-        [2, "blood shard", 1],
+        [2, "blood shard", 2],
         [2, "bronze bar", 25],
         # Level 3 - colosseum
-        [3, "granite legs", 1],
+        [3, "granite legs", 2],
         [3, "rune hasta", 25],
         [3, "$category:runes", 5000],
-        [3, "sarachnis cudgel", 1],
+        [3, "sarachnis cudgel", 2],
         # Level 4 - toa
         [4, "unsired", 2],
         [4, "dragon pickaxe", 2],
-        [4, "dragon chainbody", 1],
+        [4, "dragon chainbody", 2],
         [4, "dragon platelegs", 20],
         [4, "dragon med helm", 5],
         [4, "$category:logs", 10000],
-        [4, "shield left half", 1],
+        [4, "shield left half", 2],
         # Level 5 - cox
-        [5, "fedora", 1],
-        [5, "spirit shield", 1],
+        [5, "fedora", 2],
+        [5, "spirit shield", 2],
         [5, "$category:gems", 1337],
         [5, "$category:malediction/odium shards", 10],
         # Level 5 - tob
         [6, "fedora", 1],
-        [6, "spirit shield", 1],
         [6, "mist rune", 6969],
         [6, "$category:malediction/odium shards", 5],
         [6, "occult necklace", 2],
