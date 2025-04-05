@@ -72,9 +72,9 @@
 
         # Level 2
         [2, "coins", 10000],
-        [2, "&category:ores", 250],
-        [2, "&category:runes", 500],
-        [2, "bracelet of ethereum", 4],
+        [2, "$category:ores", 250],
+        [2, "$category:runes", 500],
+        [2, "bracelet of ethereum (uncharged)", 4],
         [2, "grapes", 2],
         # Level 3
         [3, "$category:herbs", 250],
@@ -240,9 +240,9 @@
     upgrade_costs = [
         [1, "$category:bones", 100],
         # Level 2
-        [2, "grimy guam", 2],
+        [2, "grimy guam leaf", 2],
         # Level 3
-        [3, "grimy marrentil", 5],
+        [3, "grimy marrentill", 5],
         # Level 4
         [4, "splitbark legs", 2],
         # Level 5

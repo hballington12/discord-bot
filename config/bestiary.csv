@@ -874,8 +874,7 @@ Angry unicorn - Level 45	Angry unicorn Level 45	Members	45	200	37	38	1	1
 Guard (Desert Mining Camp) - Bald	Guard (Desert Mining Camp) Bald	Members	45	60	32	39	0	0	17	15	19	-3	19	19	19
 Guard (Desert Mining Camp) - Bronze helm	Guard (Desert Mining Camp) Bronze helm	Members	45	60	32	39	0	0	17	15	19	-3	19	19	19
 Mercenary - Coif	Mercenary Coif	Members	45	60	32	39	0	0	17	15	19	-3	19	19	19
-Gangster - Level 45 (1)	Gangster Level 45 (1)	Members	45	40	40	50	1	1	0	0	10	0	0	0	0
-Gangster - Level 45 (2)	Gangster Level 45 (2)	Members	45	40	40	50	1	1	0	0	10	0	0	0	0
+Gangster	Gangster	Members	45	40	40	50	1	1	0	0	10	0	0	0	0
 Baby tanglefoot - Brown	Baby tanglefoot Brown	Members	45	40	40	40	1	1	0	0	0	0	0	0	0
 Baby tanglefoot - Tan	Baby tanglefoot Tan	Members	45	40	40	40	1	1	0	0	0	0	0	0	0
 Giant lobster	Giant lobster	Members	45	50	40	40	1	1	30	30	15	99	70	70	70
@@ -2536,3 +2535,4 @@ Verzik Vitur - Hard mode, Phase 3	Verzik Vitur Hard mode, Phase 3	Members	1520	3
 Verzik Vitur - Normal mode, Phase 3	Verzik Vitur Normal mode, Phase 3	Members	1520	3500	400	150	300	300	70	30	70	100	230	230	230
 Sol Heredit	Sol Heredit	Members	1563	1500	350	200	300	350	65	5	30	750	825	825	825
 Calvar'ion	Calvar'ion	Members	264	
+Demonic gorilla - Level 275	Demonc gorilla Level 275	Members	275	110	180	110	110	1	0	0	0	0	0	0	0

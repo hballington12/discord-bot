@@ -39,7 +39,7 @@
     category = "dks rings"
 
 [[resource_pattern]]
-    pattern = "(grimy )?(guam|marrentill|tarromin|harralander|ranarr|toadflax|irit|avantoe|kwuarm|snapdragon|cadantine|lantadyme|dwarf weed|torstol)"
+    pattern = "(grimy )?(guam leaf|marrentill|tarromin|harralander|ranarr|toadflax|irit|avantoe|kwuarm|snapdragon|cadantine|lantadyme|dwarf weed|torstol)"
     category = "herbs"
 
 [[resource_pattern]]
